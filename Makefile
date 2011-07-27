@@ -8,7 +8,8 @@ OBJECTS = error.o read.o eval.o write.o rescheme.o
 rescheme: rescheme.h $(OBJECTS)
 	$(CC) -o $@ $(OBJECTS)
 
-.c.o: rescheme.h
+%.o: %.c rescheme.h
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f *.o *~
