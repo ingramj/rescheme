@@ -9,7 +9,7 @@ rescheme: rescheme.h $(OBJECTS)
 	$(CC) -o $@ $(OBJECTS)
 
 %.o: %.c rescheme.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c $<
 
 clean:
 	rm -f *.o *~
