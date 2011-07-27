@@ -37,7 +37,16 @@
 	case 'd': case 'D': case 'e': case 'E': case 'f': case 'F'
 
 
-enum state { ST_START, ST_DECIMAL, ST_SIGNED, ST_HASH, ST_BINARY, ST_OCTAL,
+#define FINISH_NUM(base) \
+	do { \
+		ungetc(c, in); \
+		buf[off] = '\0'; \
+		obj = rs_fixnum_make(strtol(buf, NULL, base)); \
+		cur_state = ST_END; \
+	} while (0)
+
+
+enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL,
              ST_HEX, ST_END };
 
 
@@ -73,39 +82,34 @@ rs_object rs_read(FILE *in)
 				break;
 			case '+': case '-':
 				buf[off++] = c;
-				cur_state = ST_SIGNED;
+				/* Look ahead to see if it's followed by a digit. */
+				c = getc(in);
+				switch (c) {
+				case DIGIT:
+					buf[off++] = c;
+					cur_state = ST_DECIMAL;
+					break;
+				default:
+					rs_fatal("expected a digit");
+				}
 				break;
 			case '#':
 				cur_state = ST_HASH;
 				break;
 			default:
-				rs_fatal("expected whitespace or digit");
+				rs_fatal("invalid expression");
 			}
 			break;
 		case ST_DECIMAL:
 			switch (c) {
 			case DIGIT:
 				buf[off++] = c;
-				cur_state = ST_DECIMAL;
 				break;
 			case SEP:
-				ungetc(c, in);
-				buf[off] = '\0';
-				obj = rs_fixnum_make(strtol(buf, NULL, 10));
-				cur_state = ST_END;
+				FINISH_NUM(10);
 				break;
 			default:
 				rs_fatal("expected digit or separator");
-			}
-			break;
-		case ST_SIGNED:
-			switch (c) {
-			case DIGIT:
-				buf[off++] = c;
-				cur_state = ST_DECIMAL;
-				break;
-			default:
-				rs_fatal("expected digit");
 			}
 			break;
 		case ST_HASH:
@@ -125,18 +129,25 @@ rs_object rs_read(FILE *in)
 			default:
 				rs_fatal("expected radix (b, o, d, or h)");
 			}
+			/* Look ahead to see if it's followed by a + or -. */
+			c = getc(in);
+			switch (c) {
+			case '+': case '-':
+				buf[off++] = c;
+				break;
+			case EOF:
+				rs_fatal("unexpected EOF");
+			default:
+				ungetc(c, in);
+			}
 			break;
 		case ST_BINARY:
 			switch (c) {
 			case BIN_DIGIT:
 				buf[off++] = c;
-				cur_state = ST_BINARY;
 				break;
 			case SEP:
-				ungetc(c, in);
-				buf[off] = '\0';
-				obj = rs_fixnum_make(strtol(buf, NULL, 2));
-				cur_state = ST_END;
+				FINISH_NUM(2);
 				break;
 			default:
 				rs_fatal("expected binary digit or separator");
@@ -146,13 +157,9 @@ rs_object rs_read(FILE *in)
 			switch (c) {
 			case OCT_DIGIT:
 				buf[off++] = c;
-				cur_state = ST_OCTAL;
 				break;
 			case SEP:
-				ungetc(c, in);
-				buf[off] = '\0';
-				obj = rs_fixnum_make(strtol(buf, NULL, 8));
-				cur_state = ST_END;
+				FINISH_NUM(8);
 				break;
 			default:
 				rs_fatal("expected octal digit or separator");
@@ -162,13 +169,9 @@ rs_object rs_read(FILE *in)
 			switch (c) {
 			case HEX_DIGIT:
 				buf[off++] = c;
-				cur_state = ST_HEX;
 				break;
 			case SEP:
-				ungetc(c, in);
-				buf[off] = '\0';
-				obj = rs_fixnum_make(strtol(buf, NULL, 16));
-				cur_state = ST_END;
+				FINISH_NUM(16);
 				break;
 			default:
 				rs_fatal("expected hex digit or separator");
