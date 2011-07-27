@@ -43,6 +43,10 @@ rs_object rs_read(FILE *in)
 		switch (cur_state) {
 		case ST_START:
 			switch (c) {
+			case EOF:
+				obj = EOF;  // Eventually we'll have an actual eof object.
+				cur_state = ST_END;
+				break;
 			case WS:
 				cur_state = ST_START;
 				break;
