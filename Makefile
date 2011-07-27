@@ -13,5 +13,5 @@ rescheme: rescheme.h $(OBJECTS)
 clean:
 	rm -f *.o *~
 
-cleaner:
-	rm -f *.o *~ rescheme
+cleaner: clean
+	rm -f rescheme
