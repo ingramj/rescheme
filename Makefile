@@ -1,7 +1,7 @@
 CC = clang
 CFLAGS = -std=c99 -pedantic -Wall -Wextra -Werror -DDEBUG
 
-OBJECTS = error.o read.o eval.o write.o rescheme.o
+OBJECTS = read.o eval.o write.o buffer.o error.o rescheme.o
 
 .PHONY: clean cleaner
 

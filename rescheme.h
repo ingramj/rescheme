@@ -6,41 +6,6 @@
 #include <stdio.h>
 
 
-/**** error.c - error-reporting. ****/
-
-/* The error macros have a printf-like interface. If the format string ends with
-   a ':', then the result of strerror(3) is appened. The "_s" varieties take an
-   integer status code to pass to strerror(3), and the normal varieties use
-   errno.
-*/
-
-/* Display an error message and exit. */
-#define rs_fatal(...) do { \
-		eprintf(errno, __func__, __VA_ARGS__); \
-		exit(EXIT_FAILURE); \
-	} while (0)
-#define rs_fatal_s(status, ...) do { \
-		eprintf(status, __func__, __VA_ARGS__); \
-		exit(EXIT_FAILURE); \
-	} while (0)
-
-/* Display an error message. */
-#define rs_nonfatal(...) eprintf(errno, __func__, __VA_ARGS__)
-#define rs_nonfatal_s(status, ...) eprintf(status, __func__, __VA_ARGS__);
-
-
-/* Debugging messages. */
-#ifndef DEBUG
-# define TRACE(...)
-#else
-# define TRACE(...) rs_nonfatal(__VA_ARGS__)
-#endif
-
-/* This function is used by the preceding macros, and should not be called
-   directly. */
-void eprintf(int status, char const * const func, char const * const fmt, ...);
-
-
 /**** object.c - object model and memory management. ****/
 
 /* Eventually, rs_object will be able to hold every object type. For now, our
@@ -84,5 +49,72 @@ rs_object rs_eval(rs_object expr);
    number of bytes written */
 int rs_write(FILE *out, rs_object obj);
 
+
+/**** buffer.c - character buffers ****/
+
+/* A growable, add-only character buffer. */
+struct rs_buf;
+
+/* Initialize a buffer. Trying to do anything to a buffer before calling this
+   will probably cause an error.
+*/
+void rs_buf_init(struct rs_buf *buf);
+
+/* Reset a buffer to an empty state. This does not free the structure itself,
+   which can be reused. This should be called when you're done with the buffer,
+   otherwise a memory leak could occur.
+*/
+void rs_buf_reset(struct rs_buf *buf);
+
+/* Push a character into a buffer, and then return it. */
+struct rs_buf *rs_buf_push(struct rs_buf *buf, char c);
+
+/* Returns the string held in buf. Guaranteed to be NUL-terminated.
+   NOTE: The string may be modified after it is returned. If you're going to
+   keep it around for long, make a copy and use that instead.
+ */
+const char *rs_buf_str(struct rs_buf *buf);
+
+
+/**** error.c - error-reporting. ****/
+
+/* The error macros have a printf-like interface. If the format string ends with
+   a ':', then the result of strerror(3) is appened. The "_s" varieties take an
+   integer status code to pass to strerror(3), and the normal varieties use
+   errno.
+*/
+
+/* Display an error message and exit. */
+#define rs_fatal(...) do { \
+		eprintf(errno, __func__, __VA_ARGS__); \
+		exit(EXIT_FAILURE); \
+	} while (0)
+#define rs_fatal_s(status, ...) do { \
+		eprintf(status, __func__, __VA_ARGS__); \
+		exit(EXIT_FAILURE); \
+	} while (0)
+
+/* Display an error message. */
+#define rs_nonfatal(...) eprintf(errno, __func__, __VA_ARGS__)
+#define rs_nonfatal_s(status, ...) eprintf(status, __func__, __VA_ARGS__);
+
+
+/* Debugging messages. */
+#ifndef DEBUG
+# define TRACE(...)
+#else
+# define TRACE(...) rs_nonfatal(__VA_ARGS__)
+#endif
+
+
+/**** Private declarations. These should not be used directly. ****/
+
+struct rs_buf {
+	char *buf;
+	size_t offset;
+	size_t capacity;
+};
+
+void eprintf(int status, char const * const func, char const * const fmt, ...);
 
 #endif

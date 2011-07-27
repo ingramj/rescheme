@@ -7,9 +7,6 @@
 */
 
 
-#define BUFSIZE 1024
-
-
 /* I don't know if these defines are awesome, or abominations, but they do
    make the state machine code more concise.
 */
@@ -40,8 +37,7 @@
 #define FINISH_NUM(base) \
 	do { \
 		ungetc(c, in); \
-		buf[off] = '\0'; \
-		obj = rs_fixnum_make(strtol(buf, NULL, base)); \
+		obj = rs_fixnum_make(strtol(rs_buf_str(&buf), NULL, base)); \
 		cur_state = ST_END; \
 	} while (0)
 
@@ -52,12 +48,12 @@ enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL,
 
 rs_object rs_read(FILE *in)
 {
-	/* FIXME: There are possible buffer overflows in this function. */
 	int c;
-	char buf[BUFSIZE];
-	int off = 0;
+	struct rs_buf buf;
 	rs_object obj;
 	enum state cur_state = ST_START;
+
+	rs_buf_init(&buf);
 
 	while (cur_state != ST_END) {
 		c = getc(in);
@@ -77,16 +73,16 @@ rs_object rs_read(FILE *in)
 				while ((c = getc(in)) != '\n' && c != EOF) ;
 				break;
 			case DIGIT:
-				buf[off++] = c;
+				rs_buf_push(&buf, c);
 				cur_state = ST_DECIMAL;
 				break;
 			case '+': case '-':
-				buf[off++] = c;
+				rs_buf_push(&buf, c);
 				/* Look ahead to see if it's followed by a digit. */
 				c = getc(in);
 				switch (c) {
 				case DIGIT:
-					buf[off++] = c;
+					rs_buf_push(&buf, c);
 					cur_state = ST_DECIMAL;
 					break;
 				default:
@@ -103,7 +99,7 @@ rs_object rs_read(FILE *in)
 		case ST_DECIMAL:
 			switch (c) {
 			case DIGIT:
-				buf[off++] = c;
+				rs_buf_push(&buf, c);
 				break;
 			case SEP:
 				FINISH_NUM(10);
@@ -133,7 +129,7 @@ rs_object rs_read(FILE *in)
 			c = getc(in);
 			switch (c) {
 			case '+': case '-':
-				buf[off++] = c;
+				rs_buf_push(&buf, c);
 				break;
 			case EOF:
 				rs_fatal("unexpected EOF");
@@ -144,7 +140,7 @@ rs_object rs_read(FILE *in)
 		case ST_BINARY:
 			switch (c) {
 			case BIN_DIGIT:
-				buf[off++] = c;
+				rs_buf_push(&buf, c);
 				break;
 			case SEP:
 				FINISH_NUM(2);
@@ -156,7 +152,7 @@ rs_object rs_read(FILE *in)
 		case ST_OCTAL:
 			switch (c) {
 			case OCT_DIGIT:
-				buf[off++] = c;
+				rs_buf_push(&buf, c);
 				break;
 			case SEP:
 				FINISH_NUM(8);
@@ -168,7 +164,7 @@ rs_object rs_read(FILE *in)
 		case ST_HEX:
 			switch (c) {
 			case HEX_DIGIT:
-				buf[off++] = c;
+				rs_buf_push(&buf, c);
 				break;
 			case SEP:
 				FINISH_NUM(16);
@@ -181,5 +177,6 @@ rs_object rs_read(FILE *in)
 			rs_fatal("got into an impossible state");
 		}
 	}
+	rs_buf_reset(&buf);
 	return obj;
 }
