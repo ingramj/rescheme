@@ -1,0 +1,43 @@
+ReScheme - A second Scheme implementation
+=========================================
+
+  ReScheme is a "sequel" to my earlier Scheme interpreter, bs. Just as bs was
+written while I was following Peter Michaux's Scheme From Scratch articles,
+ReScheme will be following his upcoming Royal Scheme series.
+  See the LICENSE file for copyright and licensing information.
+
+Compilation and Usage
+=====================
+
+  If you don't have clang installed, change the first line of Makefile to
+"CC = gcc", or whatever is appropriate. There aren't any external dependencies
+so far.
+
+    $ make
+    $ ./rescheme
+    > 123
+    123
+    > 9876
+    9876
+    > a
+    rs_read: expected whitespace or digit
+    $
+
+Not much to it yet.
+
+
+Links
+=====
+
+https://github.com/ingramj/bs
+  My previous Scheme interpreter. Buggy, but it was fun to write.
+
+http://peter.michaux.ca/index#Scheme%20from%20Scratch
+https://github.com/petermichaux/bootstrap-scheme
+  Peter's original Scheme from Scratch articles, and the Bootstrap Scheme
+  interpreter. Several people followed this series and wrote their own
+  implementations.
+
+http://peter.michaux.ca/index#Royal%20Scheme
+https://github.com/petermichaux/royal-scheme
+  Peter's Royal Scheme articles (coming soon), and code.
