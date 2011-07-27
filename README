@@ -17,10 +17,11 @@ so far.
     $ ./rescheme
     > 123
     123
-    > 9876
-    9876
-    > a
-    rs_read: expected whitespace or digit
+    > -9876
+    -9876
+    > +45
+    45
+    > <Ctrl-D>
     $
 
 Not much to it yet.
