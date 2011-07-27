@@ -25,11 +25,12 @@
 case '5': case '6': case '7': case '8': case '9'
 
 
-enum state { ST_START, ST1, ST_END };
+enum state { ST_START, ST_DECIMAL, ST_SIGN, ST_END };
 
 
 rs_object rs_read(FILE *in)
 {
+	/* FIXME: There are possible buffer overflows in this function. */
 	int c;
 	char buf[BUFSIZE];
 	int off = 0;
@@ -47,17 +48,21 @@ rs_object rs_read(FILE *in)
 				break;
 			case DIGIT:
 				buf[off++] = c;
-				cur_state = ST1;
+				cur_state = ST_DECIMAL;
+				break;
+			case '+': case '-':
+				buf[off++] = c;
+				cur_state = ST_SIGN;
 				break;
 			default:
 				rs_fatal("expected whitespace or digit");
 			}
 			break;
-		case ST1:
+		case ST_DECIMAL:
 			switch (c) {
 			case DIGIT:
 				buf[off++] = c;
-				cur_state = ST1;
+				cur_state = ST_DECIMAL;
 				break;
 			case SEP:
 				ungetc(c, in);
@@ -67,6 +72,16 @@ rs_object rs_read(FILE *in)
 				break;
 			default:
 				rs_fatal("expected digit or separator");
+			}
+			break;
+		case ST_SIGN:
+			switch (c) {
+			case DIGIT:
+				buf[off++] = c;
+				cur_state = ST_DECIMAL;
+				break;
+			default:
+				rs_fatal("expected digit");
 			}
 			break;
 		default:
