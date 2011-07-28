@@ -1,5 +1,6 @@
 #include "rescheme.h"
 #include <ctype.h>
+#include <limits.h>
 
 /* From what I can tell, the normal way to parse Lisp is with a recursive
    descent parser. I'm taking a different approach, and hand-writing a state
@@ -36,8 +37,11 @@
 
 #define FINISH_NUM(base)	  \
 	do { \
-		ungetc(c, in); \
-		obj = rs_fixnum_make(strtol(rs_buf_str(&buf), NULL, base)); \
+		if (ungetc(c, in) == EOF) rs_fatal("ungetc failed:"); \
+		long value = strtol(rs_buf_str(&buf), NULL, base); \
+		if ((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) \
+			rs_fatal("number out of range"); \
+		obj = rs_fixnum_make(value); \
 		cur_state = ST_END; \
 	} while (0)
 
@@ -145,7 +149,9 @@ rs_object rs_read(FILE *in)
 			case EOF:
 				rs_fatal("unexpected EOF");
 			default:
-				ungetc(c, in);
+				if (ungetc(c, in) == EOF) {
+					rs_fatal("ungetc failed:");
+				}
 			}
 			break;
 		case ST_BINARY:
