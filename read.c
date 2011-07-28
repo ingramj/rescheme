@@ -119,7 +119,7 @@ rs_object rs_read(FILE *in)
 			case 'd': case 'D':
 				cur_state = ST_DECIMAL;
 				break;
-			case 'h': case 'H':
+			case 'x': case 'X':
 				cur_state = ST_HEX;
 				break;
 			default:
