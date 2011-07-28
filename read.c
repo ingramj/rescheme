@@ -3,9 +3,13 @@
 #include <limits.h>
 
 /* From what I can tell, the normal way to parse Lisp is with a recursive
-   descent parser. I'm taking a different approach, and hand-writing a state
-   machine. This may end up being a bad idea.
+   descent parser. I'm taking a different approach, and hand-writing a
+   pushdown automata-based parser.
 */
+
+
+/* Turn the string in buf into an rs_fixnum, or die trying. */
+static inline rs_object check_num(struct rs_buf *buf, int base);
 
 
 /* I don't know if these defines are awesome, or abominations, but they do
@@ -35,22 +39,15 @@
 	case 'd': case 'D': case 'e': case 'E': case 'f': case 'F'
 
 
-#define FINISH_NUM(base)	  \
-	do { \
-		if (ungetc(c, in) == EOF) rs_fatal("ungetc failed:"); \
-		long value = strtol(rs_buf_str(&buf), NULL, base); \
-		if ((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) \
-			rs_fatal("number out of range"); \
-		obj = rs_fixnum_make(value); \
-		cur_state = ST_END; \
-	} while (0)
-
-
 #ifdef DEBUG
+# define PUSH_BACK(c, in) \
+	if (ungetc(c, in) == EOF) rs_fatal("state %d: ungetc failed:", cur_state)
 # define BUF_PUSH(buf, c) \
 	if (rs_buf_push((buf), (c)) == NULL) \
 		rs_fatal("state %d: could not write to buffer:", cur_state);
 #else
+# define PUSH_BACK(c, in) \
+	if (ungetc(c, in) == EOF) rs_fatal("ungetc failed:");
 # define BUF_PUSH(buf, c) \
 	if (rs_buf_push((buf), (c)) == NULL) \
 		rs_fatal("could not write to buffer:");
@@ -117,7 +114,9 @@ rs_object rs_read(FILE *in)
 				BUF_PUSH(&buf, c);
 				break;
 			case SEP:
-				FINISH_NUM(10);
+				PUSH_BACK(c, in);
+				obj = check_num(&buf, 10);
+				cur_state = ST_END;
 				break;
 			default:
 				rs_fatal("expected digit or separator");
@@ -149,9 +148,7 @@ rs_object rs_read(FILE *in)
 			case EOF:
 				rs_fatal("unexpected EOF");
 			default:
-				if (ungetc(c, in) == EOF) {
-					rs_fatal("ungetc failed:");
-				}
+				PUSH_BACK(c, in);
 			}
 			break;
 		case ST_BINARY:
@@ -160,7 +157,9 @@ rs_object rs_read(FILE *in)
 				BUF_PUSH(&buf, c);
 				break;
 			case SEP:
-				FINISH_NUM(2);
+				PUSH_BACK(c, in);
+				obj = check_num(&buf, 2);
+				cur_state = ST_END;
 				break;
 			default:
 				rs_fatal("expected binary digit or separator");
@@ -172,7 +171,9 @@ rs_object rs_read(FILE *in)
 				BUF_PUSH(&buf, c);
 				break;
 			case SEP:
-				FINISH_NUM(8);
+				PUSH_BACK(c, in);
+				obj = check_num(&buf, 8);
+				cur_state = ST_END;
 				break;
 			default:
 				rs_fatal("expected octal digit or separator");
@@ -184,7 +185,9 @@ rs_object rs_read(FILE *in)
 				BUF_PUSH(&buf, c);
 				break;
 			case SEP:
-				FINISH_NUM(16);
+				PUSH_BACK(c, in);
+				obj = check_num(&buf, 16);
+				cur_state = ST_END;
 				break;
 			default:
 				rs_fatal("expected hex digit or separator");
@@ -196,4 +199,14 @@ rs_object rs_read(FILE *in)
 	}
 	rs_buf_reset(&buf);
 	return obj;
+}
+
+
+static inline rs_object check_num(struct rs_buf *buf, int base)
+{
+	long value = strtol(rs_buf_str(buf), NULL, base);
+	if ((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) {
+		rs_fatal("number out of range");
+	}
+	return rs_fixnum_make(value);
 }
