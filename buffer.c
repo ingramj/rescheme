@@ -32,12 +32,18 @@ struct rs_buf *rs_buf_push(struct rs_buf *buf, char c)
 
 	if (buf->buf == NULL) {
 		buf->buf = calloc(_RS_BUF_GROWBY, 1);
+		if (buf->buf == NULL) {
+			return NULL;
+		}
 		buf->capacity = _RS_BUF_GROWBY;
 		buf->offset = 0;
 	}
 
 	if (buf->offset >= buf->capacity - 1) {
 		char *newbuf = realloc(buf->buf, buf->capacity + _RS_BUF_GROWBY);
+		if (newbuf == NULL) {
+			return NULL;
+		}
 		buf->buf = newbuf;
 		buf->capacity += _RS_BUF_GROWBY;
 	}

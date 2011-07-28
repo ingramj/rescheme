@@ -34,12 +34,23 @@
 	case 'd': case 'D': case 'e': case 'E': case 'f': case 'F'
 
 
-#define FINISH_NUM(base) \
+#define FINISH_NUM(base)	  \
 	do { \
 		ungetc(c, in); \
 		obj = rs_fixnum_make(strtol(rs_buf_str(&buf), NULL, base)); \
 		cur_state = ST_END; \
 	} while (0)
+
+
+#ifdef DEBUG
+# define BUF_PUSH(buf, c) \
+	if (rs_buf_push((buf), (c)) == NULL) \
+		rs_fatal("state %d: could not write to buffer:", cur_state);
+#else
+# define BUF_PUSH(buf, c) \
+	if (rs_buf_push((buf), (c)) == NULL) \
+		rs_fatal("could not write to buffer:");
+#endif
 
 
 enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL,
@@ -73,16 +84,16 @@ rs_object rs_read(FILE *in)
 				while ((c = getc(in)) != '\n' && c != EOF) ;
 				break;
 			case DIGIT:
-				rs_buf_push(&buf, c);
+				BUF_PUSH(&buf, c);
 				cur_state = ST_DECIMAL;
 				break;
 			case '+': case '-':
-				rs_buf_push(&buf, c);
+				BUF_PUSH(&buf, c);
 				/* Look ahead to see if it's followed by a digit. */
 				c = getc(in);
 				switch (c) {
 				case DIGIT:
-					rs_buf_push(&buf, c);
+					BUF_PUSH(&buf, c);
 					cur_state = ST_DECIMAL;
 					break;
 				default:
@@ -99,7 +110,7 @@ rs_object rs_read(FILE *in)
 		case ST_DECIMAL:
 			switch (c) {
 			case DIGIT:
-				rs_buf_push(&buf, c);
+				BUF_PUSH(&buf, c);
 				break;
 			case SEP:
 				FINISH_NUM(10);
@@ -129,7 +140,7 @@ rs_object rs_read(FILE *in)
 			c = getc(in);
 			switch (c) {
 			case '+': case '-':
-				rs_buf_push(&buf, c);
+				BUF_PUSH(&buf, c);
 				break;
 			case EOF:
 				rs_fatal("unexpected EOF");
@@ -140,7 +151,7 @@ rs_object rs_read(FILE *in)
 		case ST_BINARY:
 			switch (c) {
 			case BIN_DIGIT:
-				rs_buf_push(&buf, c);
+				BUF_PUSH(&buf, c);
 				break;
 			case SEP:
 				FINISH_NUM(2);
@@ -152,7 +163,7 @@ rs_object rs_read(FILE *in)
 		case ST_OCTAL:
 			switch (c) {
 			case OCT_DIGIT:
-				rs_buf_push(&buf, c);
+				BUF_PUSH(&buf, c);
 				break;
 			case SEP:
 				FINISH_NUM(8);
@@ -164,7 +175,7 @@ rs_object rs_read(FILE *in)
 		case ST_HEX:
 			switch (c) {
 			case HEX_DIGIT:
-				rs_buf_push(&buf, c);
+				BUF_PUSH(&buf, c);
 				break;
 			case SEP:
 				FINISH_NUM(16);
