@@ -17,8 +17,8 @@ typedef long rs_fixnum;
 
 /* The minimum and maximum values for fixnums will change as the implementation
    evolves. Specifically, a few bits will be lost to "type tags". */
-#define rs_fixnum_min LONG_MIN;
-#define rs_fixnum_max LONG_MAX;
+#define rs_fixnum_min LONG_MIN
+#define rs_fixnum_max LONG_MAX
 
 /* Convert a fixnum into an object. */
 static inline rs_object rs_fixnum_make(rs_fixnum val) {
