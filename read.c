@@ -1,4 +1,5 @@
 #include "rescheme.h"
+#include <assert.h>
 #include <ctype.h>
 #include <limits.h>
 #include <string.h>
@@ -9,8 +10,8 @@
 */
 
 
-enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL,
-             ST_HEX, ST_CHARACTER, ST_END };
+enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL, ST_HEX,
+             ST_CHARACTER, ST_CHAR_N, ST_CHAR_S, ST_CHAR_T, ST_END };
 
 
 /* Turn the string in buf into an rs_fixnum, or die trying. */
@@ -217,60 +218,79 @@ rs_object rs_read(FILE *in)
 			break;
 
 		case ST_CHARACTER:
-			/* TODO: this state is a bit of a monster, and should probably be
-			   split up. */
 			switch (c) {
 			case 'n': case 'N':
-				/* See if we have #\newline. */
-				get_word(&buf, in, c, 7, cur_state);
-				if (strcmp("n", rs_buf_str(&buf)) == 0) {
-					obj = rs_character_make(c);
-				} else if (strcmp("newline", rs_buf_str(&buf)) == 0) {
-					obj = rs_character_make('\n');
-				} else {
-					rs_fatal("unknown character constant (#\\%s)",
-					         rs_buf_str(&buf));
-				}
+				PUSH_BACK(c, in);
+				cur_state = ST_CHAR_N;
 				break;
 			case 's': case 'S':
-				/* See if we have #\space. */
-				get_word(&buf, in, c, 7, cur_state);
-				if (strcmp("s", rs_buf_str(&buf)) == 0) {
-					obj = rs_character_make(c);
-				} else if (strcmp("space", rs_buf_str(&buf)) == 0) {
-					obj = rs_character_make(' ');
-				} else {
-					rs_fatal("unknown character constant (#\\%s)",
-					         rs_buf_str(&buf));
-				}
+				PUSH_BACK(c, in);
+				cur_state = ST_CHAR_S;
 				break;
 			case 't': case 'T':
-				/* See if we have #\tab (which is non-standard). */
-				get_word(&buf, in, c, 7, cur_state);
-				if (strcmp("t", rs_buf_str(&buf)) == 0) {
-					obj = rs_character_make(c);
-				} else if (strcmp("tab", rs_buf_str(&buf)) == 0) {
-					obj = rs_character_make('\t');
-				} else {
-					rs_fatal("unknown character constant (#\\%s)",
-					         rs_buf_str(&buf));
-				}
+				PUSH_BACK(c, in);
+				cur_state = ST_CHAR_T;
 				break;
 			default:
 				if (isgraph(c)) {
-					/* Make sure the next character is a separator. */
+					/* Make sure the next character is a delimiter. */
 					char d = getc(in);
 					switch(d) {
 					case DELIM:
 						PUSH_BACK(d, in);
 						obj = rs_character_make(c);
+						cur_state = ST_END;
 						break;
 					default:
-						rs_fatal("unknown character constant");
+						rs_fatal("unknown character literal");
 					}
 				} else {
-					rs_fatal("expected a character constant");
+					rs_fatal("expected a character literal");
 				}
+			}
+			break;
+
+		case ST_CHAR_N:
+			assert(c == 'n' || c == 'N');
+			/* See if we have #\newline. */
+			get_word(&buf, in, c, 7, cur_state);
+			if (strcmp("n", rs_buf_str(&buf)) == 0) {
+				obj = rs_character_make(c);
+			} else if (strcmp("newline", rs_buf_str(&buf)) == 0) {
+				obj = rs_character_make('\n');
+			} else {
+				rs_fatal("unknown character literal (#\\%s)",
+				         rs_buf_str(&buf));
+			}
+			cur_state = ST_END;
+			break;
+
+		case ST_CHAR_S:
+			assert(c == 's' || c == 'S');
+			/* See if we have #\space. */
+			get_word(&buf, in, c, 5, cur_state);
+			if (strcmp("s", rs_buf_str(&buf)) == 0) {
+				obj = rs_character_make(c);
+			} else if (strcmp("space", rs_buf_str(&buf)) == 0) {
+				obj = rs_character_make(' ');
+			} else {
+				rs_fatal("unknown character literal (#\\%s)",
+				         rs_buf_str(&buf));
+			}
+			cur_state = ST_END;
+			break;
+
+		case ST_CHAR_T:
+			assert(c == 't' || c == 'T');
+			/* See if we have #\tab (which is non-standard). */
+			get_word(&buf, in, c, 3, cur_state);
+			if (strcmp("t", rs_buf_str(&buf)) == 0) {
+				obj = rs_character_make(c);
+			} else if (strcmp("tab", rs_buf_str(&buf)) == 0) {
+				obj = rs_character_make('\t');
+			} else {
+				rs_fatal("unknown character literal (#\\%s)",
+				         rs_buf_str(&buf));
 			}
 			cur_state = ST_END;
 			break;
