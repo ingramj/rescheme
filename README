@@ -10,8 +10,9 @@ Compilation and Usage
 =====================
 
   If you don't have clang installed, change the first line of Makefile to
-"CC = gcc", or whatever is appropriate. There aren't any external dependencies
-so far.
+"CC = gcc", or whatever is appropriate. There are no external dependencies.
+
+So far, only integer and character literals are supported.
 
     $ make
     $ ./rescheme
@@ -27,10 +28,14 @@ so far.
     420
     > #x-14bead
     -1359533
+    > #\a
+    #\a
+    > #\B
+    #\B
+    > #\newline
+    #\newline
     > <Ctrl-D>
     $
-
-Not much to it yet.
 
 
 Links

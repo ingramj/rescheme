@@ -1,6 +1,7 @@
 #include "rescheme.h"
 #include <ctype.h>
 #include <limits.h>
+#include <string.h>
 
 /* From what I can tell, the normal way to parse Lisp is with a recursive
    descent parser. I'm taking a different approach, and hand-writing a
@@ -8,8 +9,17 @@
 */
 
 
+enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL,
+             ST_HEX, ST_CHARACTER, ST_END };
+
+
 /* Turn the string in buf into an rs_fixnum, or die trying. */
 static inline rs_object check_num(struct rs_buf *buf, int base);
+
+/* Read a 'word' of up to n characters into buf, starting with c. The word ends
+   when a delimiter is read, or n characters have been read. */
+static void get_word(struct rs_buf *buf, FILE *in, int c, int n,
+                     enum state cur_state);
 
 
 /* I don't know if these defines are awesome, or abominations, but they do
@@ -20,7 +30,7 @@ static inline rs_object check_num(struct rs_buf *buf, int base);
 #define WS \
 	' ': case '\t': case '\r': case '\n'
 
-#define SEP WS
+#define DELIM WS
 
 #define BIN_DIGIT '0': case '1'
 
@@ -50,14 +60,12 @@ static inline rs_object check_num(struct rs_buf *buf, int base);
 # define PUSH_BACK(c, in) \
 	if (c != EOF && ungetc(c, in) == EOF) \
 		rs_fatal("ungetc failed:");
-# define BUF_PUSH(buf, c) \
+
+
+# define BUF_PUSH(buf, c)	  \
 	if (rs_buf_push((buf), (c)) == NULL) \
 		rs_fatal("could not write to buffer:");
 #endif
-
-
-enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL,
-             ST_HEX, ST_END };
 
 
 rs_object rs_read(FILE *in)
@@ -116,7 +124,7 @@ rs_object rs_read(FILE *in)
 			case DIGIT:
 				BUF_PUSH(&buf, c);
 				break;
-			case SEP:
+			case DELIM:
 				PUSH_BACK(c, in);
 				obj = check_num(&buf, 10);
 				cur_state = ST_END;
@@ -126,7 +134,8 @@ rs_object rs_read(FILE *in)
 			}
 			break;
 
-		case ST_HASH:
+		case ST_HASH: {
+			int is_fixnum = 1;
 			switch (c) {
 			case 'b': case 'B':
 				cur_state = ST_BINARY;
@@ -140,18 +149,26 @@ rs_object rs_read(FILE *in)
 			case 'x': case 'X':
 				cur_state = ST_HEX;
 				break;
+			case '\\':
+				cur_state = ST_CHARACTER;
+				is_fixnum = 0;
+				break;
 			default:
 				rs_fatal("expected radix (b, o, d, or h)");
 			}
-			/* Look ahead to see if it's followed by a + or -. */
-			c = getc(in);
-			switch (c) {
-			case '+': case '-':
-				BUF_PUSH(&buf, c);
-				break;
-			default:
-				PUSH_BACK(c, in);
+			/* If we're expecting a fixnum, look ahead to see if the next
+			   character is a + or -. */
+			if (is_fixnum) {
+				c = getc(in);
+				switch (c) {
+				case '+': case '-':
+					BUF_PUSH(&buf, c);
+					break;
+				default:
+					PUSH_BACK(c, in);
+				}
 			}
+		}
 			break;
 
 		case ST_BINARY:
@@ -159,7 +176,7 @@ rs_object rs_read(FILE *in)
 			case BIN_DIGIT:
 				BUF_PUSH(&buf, c);
 				break;
-			case SEP:
+			case DELIM:
 				PUSH_BACK(c, in);
 				obj = check_num(&buf, 2);
 				cur_state = ST_END;
@@ -174,7 +191,7 @@ rs_object rs_read(FILE *in)
 			case OCT_DIGIT:
 				BUF_PUSH(&buf, c);
 				break;
-			case SEP:
+			case DELIM:
 				PUSH_BACK(c, in);
 				obj = check_num(&buf, 8);
 				cur_state = ST_END;
@@ -189,7 +206,7 @@ rs_object rs_read(FILE *in)
 			case HEX_DIGIT:
 				BUF_PUSH(&buf, c);
 				break;
-			case SEP:
+			case DELIM:
 				PUSH_BACK(c, in);
 				obj = check_num(&buf, 16);
 				cur_state = ST_END;
@@ -197,6 +214,65 @@ rs_object rs_read(FILE *in)
 			default:
 				rs_fatal("expected hex digit or separator");
 			}
+			break;
+
+		case ST_CHARACTER:
+			/* TODO: this state is a bit of a monster, and should probably be
+			   split up. */
+			switch (c) {
+			case 'n': case 'N':
+				/* See if we have #\newline. */
+				get_word(&buf, in, c, 7, cur_state);
+				if (strcmp("n", rs_buf_str(&buf)) == 0) {
+					obj = rs_character_make(c);
+				} else if (strcmp("newline", rs_buf_str(&buf)) == 0) {
+					obj = rs_character_make('\n');
+				} else {
+					rs_fatal("unknown character constant (#\\%s)",
+					         rs_buf_str(&buf));
+				}
+				break;
+			case 's': case 'S':
+				/* See if we have #\space. */
+				get_word(&buf, in, c, 7, cur_state);
+				if (strcmp("s", rs_buf_str(&buf)) == 0) {
+					obj = rs_character_make(c);
+				} else if (strcmp("space", rs_buf_str(&buf)) == 0) {
+					obj = rs_character_make(' ');
+				} else {
+					rs_fatal("unknown character constant (#\\%s)",
+					         rs_buf_str(&buf));
+				}
+				break;
+			case 't': case 'T':
+				/* See if we have #\tab (which is non-standard). */
+				get_word(&buf, in, c, 7, cur_state);
+				if (strcmp("t", rs_buf_str(&buf)) == 0) {
+					obj = rs_character_make(c);
+				} else if (strcmp("tab", rs_buf_str(&buf)) == 0) {
+					obj = rs_character_make('\t');
+				} else {
+					rs_fatal("unknown character constant (#\\%s)",
+					         rs_buf_str(&buf));
+				}
+				break;
+			default:
+				if (isgraph(c)) {
+					/* Make sure the next character is a separator. */
+					char d = getc(in);
+					switch(d) {
+					case DELIM:
+						PUSH_BACK(d, in);
+						obj = rs_character_make(c);
+						break;
+					default:
+						rs_fatal("unknown character constant");
+					}
+				} else {
+					rs_fatal("expected a character constant");
+				}
+			}
+			cur_state = ST_END;
 			break;
 
 		default:
@@ -215,4 +291,26 @@ static inline rs_object check_num(struct rs_buf *buf, int base)
 		rs_fatal("number out of range");
 	}
 	return rs_fixnum_make(value);
+}
+
+
+static void get_word(struct rs_buf *buf, FILE *in, int c, int n,
+                           enum state cur_state)
+{
+	BUF_PUSH(buf, tolower(c));
+	int loop = 1;
+	while (loop) {
+		c = getc(in);
+		switch (c) {
+		case DELIM:
+			loop = 0;
+			PUSH_BACK(c, in);
+			break;
+		case EOF:
+			rs_fatal("unexpected EOF");
+		default:
+			BUF_PUSH(buf, tolower(c));
+		}
+		if (loop && (--n <= 0)) break;
+	}
 }

@@ -38,6 +38,25 @@ static inline rs_fixnum rs_fixnum_value(rs_object obj) {
 	return (rs_fixnum)(obj >> rs_object_tag_bits);
 }
 
+/* Characters */
+
+/* Assume that sizeof(short) >= 2. */
+typedef short rs_character;
+
+#define rs_character_tag 2
+
+static inline int rs_character_p(rs_object obj) {
+	return ((rs_character)obj & rs_object_tag_mask) == rs_character_tag;
+}
+
+static inline rs_object rs_character_make(rs_character val) {
+	return (rs_object)(val << rs_object_tag_bits) + rs_character_tag;
+}
+
+static inline rs_character rs_character_value(rs_object obj) {
+	return (rs_character)(obj >> rs_object_tag_bits);
+}
+
 
 /**** read.c - s-expression parsing. ****/
 
