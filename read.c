@@ -41,13 +41,15 @@ static inline rs_object check_num(struct rs_buf *buf, int base);
 
 #ifdef DEBUG
 # define PUSH_BACK(c, in) \
-	if (ungetc(c, in) == EOF) rs_fatal("state %d: ungetc failed:", cur_state)
+	if (c != EOF && ungetc(c, in) == EOF) \
+		rs_fatal("state %d: ungetc failed:", cur_state)
 # define BUF_PUSH(buf, c) \
 	if (rs_buf_push((buf), (c)) == NULL) \
 		rs_fatal("state %d: could not write to buffer:", cur_state);
 #else
 # define PUSH_BACK(c, in) \
-	if (ungetc(c, in) == EOF) rs_fatal("ungetc failed:");
+	if (c != EOF && ungetc(c, in) == EOF) \
+		rs_fatal("ungetc failed:");
 # define BUF_PUSH(buf, c) \
 	if (rs_buf_push((buf), (c)) == NULL) \
 		rs_fatal("could not write to buffer:");
@@ -73,16 +75,16 @@ rs_object rs_read(FILE *in)
 		switch (cur_state) {
 		case ST_START:
 			switch (c) {
-			case EOF:
-				obj = EOF;  // Eventually we'll have an actual eof object.
-				cur_state = ST_END;
-				break;
 			case WS:
 				/* skip whitespace */
 				break;
 			case ';':
 				/* skip comments */
 				while ((c = getc(in)) != '\n' && c != EOF) ;
+				break;
+			case EOF:
+				obj = EOF;  // Eventually we'll have an actual eof object.
+				cur_state = ST_END;
 				break;
 			case DIGIT:
 				BUF_PUSH(&buf, c);
@@ -108,6 +110,7 @@ rs_object rs_read(FILE *in)
 				rs_fatal("invalid expression");
 			}
 			break;
+
 		case ST_DECIMAL:
 			switch (c) {
 			case DIGIT:
@@ -122,6 +125,7 @@ rs_object rs_read(FILE *in)
 				rs_fatal("expected digit or separator");
 			}
 			break;
+
 		case ST_HASH:
 			switch (c) {
 			case 'b': case 'B':
@@ -145,12 +149,11 @@ rs_object rs_read(FILE *in)
 			case '+': case '-':
 				BUF_PUSH(&buf, c);
 				break;
-			case EOF:
-				rs_fatal("unexpected EOF");
 			default:
 				PUSH_BACK(c, in);
 			}
 			break;
+
 		case ST_BINARY:
 			switch (c) {
 			case BIN_DIGIT:
@@ -165,6 +168,7 @@ rs_object rs_read(FILE *in)
 				rs_fatal("expected binary digit or separator");
 			}
 			break;
+
 		case ST_OCTAL:
 			switch (c) {
 			case OCT_DIGIT:
@@ -179,6 +183,7 @@ rs_object rs_read(FILE *in)
 				rs_fatal("expected octal digit or separator");
 			}
 			break;
+
 		case ST_HEX:
 			switch (c) {
 			case HEX_DIGIT:
@@ -193,6 +198,7 @@ rs_object rs_read(FILE *in)
 				rs_fatal("expected hex digit or separator");
 			}
 			break;
+
 		default:
 			rs_fatal("got into an impossible state");
 		}
