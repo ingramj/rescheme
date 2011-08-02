@@ -1,0 +1,3 @@
+v0.1  (2 Aug 2011)
+    * There is a simple REPL for interactive use.
+    * Integers are supported, in several bases.

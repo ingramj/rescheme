@@ -2,6 +2,8 @@
 
 int main(void)
 {
+	printf("ReScheme v0.1\n");
+
 	rs_object obj;
 	for (;;) {
 		printf("> ");
