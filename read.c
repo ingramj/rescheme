@@ -130,7 +130,7 @@ rs_object rs_read(FILE *in)
 				cur_state = ST_END;
 				break;
 			default:
-				rs_fatal("expected digit or separator");
+				rs_fatal("expected a digit, or a delimiter");
 			}
 			break;
 
@@ -154,7 +154,7 @@ rs_object rs_read(FILE *in)
 				is_fixnum = 0;
 				break;
 			default:
-				rs_fatal("expected radix (b, o, d, or h)");
+				rs_fatal("expected a radix, or a character literal");
 			}
 			/* If we're expecting a fixnum, look ahead to see if the next
 			   character is a + or -. */
@@ -182,7 +182,7 @@ rs_object rs_read(FILE *in)
 				cur_state = ST_END;
 				break;
 			default:
-				rs_fatal("expected binary digit or separator");
+				rs_fatal("expected a binary digit, or a delimiter");
 			}
 			break;
 
@@ -197,7 +197,7 @@ rs_object rs_read(FILE *in)
 				cur_state = ST_END;
 				break;
 			default:
-				rs_fatal("expected octal digit or separator");
+				rs_fatal("expected an octal digit, or a delimiter");
 			}
 			break;
 
@@ -212,7 +212,7 @@ rs_object rs_read(FILE *in)
 				cur_state = ST_END;
 				break;
 			default:
-				rs_fatal("expected hex digit or separator");
+				rs_fatal("expected a hex digit, or a delimiter");
 			}
 			break;
 
