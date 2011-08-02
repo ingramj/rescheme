@@ -8,26 +8,34 @@
 
 /**** object.c - object model and memory management. ****/
 
-/* Eventually, rs_object will be able to hold every object type. For now, our
-   only objects are fixnums. */
+/* An rs_object can be any ReScheme data type. Right now there are only
+   fixnums, but soon there will be others. */
 typedef long rs_object;
 
-/* An integer that is restricted to a fixed range. */
+/* Objects have a 2-bit tag that indicates their type. */
+#define rs_object_tag_bits 2
+#define rs_object_tag_mask 3
+
+/* Fixnums */
 typedef long rs_fixnum;
 
-/* The minimum and maximum values for fixnums will change as the implementation
-   evolves. Specifically, a few bits will be lost to "type tags". */
-#define rs_fixnum_min LONG_MIN
-#define rs_fixnum_max LONG_MAX
+#define rs_fixnum_tag 1
 
-/* Convert a fixnum into an object. */
-static inline rs_object rs_fixnum_make(rs_fixnum val) {
-	return (rs_object) val;
+#define rs_fixnum_min	  \
+	(((((rs_fixnum)1) << (8 * sizeof(rs_object) - 1)) >> rs_object_tag_bits) + 1)
+
+#define rs_fixnum_max (-(rs_fixnum_min))
+
+static inline int rs_fixnum_p(rs_object obj) {
+	return ((rs_fixnum)obj & rs_object_tag_mask) == rs_fixnum_tag;
 }
 
-/* Convert an object into a fixnum. */
+static inline rs_object rs_fixnum_make(rs_fixnum val) {
+	return (rs_object)(val << rs_object_tag_bits) + rs_fixnum_tag;
+}
+
 static inline rs_fixnum rs_fixnum_value(rs_object obj) {
-	return (rs_fixnum) obj;
+	return (rs_fixnum)(obj >> rs_object_tag_bits);
 }
 
 

@@ -205,7 +205,7 @@ rs_object rs_read(FILE *in)
 static inline rs_object check_num(struct rs_buf *buf, int base)
 {
 	long value = strtol(rs_buf_str(buf), NULL, base);
-	if ((value == LONG_MAX || value == LONG_MIN) && errno == ERANGE) {
+	if (value < rs_fixnum_min || value > rs_fixnum_max) {
 		rs_fatal("number out of range");
 	}
 	return rs_fixnum_make(value);
