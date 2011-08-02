@@ -61,8 +61,6 @@ static void get_word(struct rs_buf *buf, FILE *in, int c, int n,
 # define PUSH_BACK(c, in) \
 	if (c != EOF && ungetc(c, in) == EOF) \
 		rs_fatal("ungetc failed:");
-
-
 # define BUF_PUSH(buf, c)	  \
 	if (rs_buf_push((buf), (c)) == NULL) \
 		rs_fatal("could not write to buffer:");
