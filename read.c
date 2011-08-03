@@ -19,8 +19,7 @@ static inline rs_object check_num(struct rs_buf *buf, int base);
 
 /* Read a 'word' of up to n characters into buf, starting with c. The word ends
    when a delimiter is read, or n characters have been read. */
-static void get_word(struct rs_buf *buf, FILE *in, int c, int n,
-                     enum state cur_state);
+static void get_word(struct rs_buf *buf, FILE *in, int c, int n);
 
 
 /* I don't know if these defines are awesome, or abominations, but they do
@@ -49,29 +48,21 @@ static void get_word(struct rs_buf *buf, FILE *in, int c, int n,
 	case 'a': case 'A': case 'b': case 'B': case 'c': case 'C': \
 	case 'd': case 'D': case 'e': case 'E': case 'f': case 'F'
 
-
-#ifdef DEBUG
-# define PUSH_BACK(c, in) \
-	if (c != EOF && ungetc(c, in) == EOF) \
-		rs_fatal("state %d: ungetc failed:", cur_state)
-# define BUF_PUSH(buf, c) \
-	if (rs_buf_push((buf), (c)) == NULL) \
-		rs_fatal("state %d: could not write to buffer:", cur_state);
-#else
-# define PUSH_BACK(c, in) \
+#define PUSH_BACK(c, in) \
 	if (c != EOF && ungetc(c, in) == EOF) \
 		rs_fatal("ungetc failed:");
-# define BUF_PUSH(buf, c)	  \
+
+#define BUF_PUSH(buf, c)	  \
 	if (rs_buf_push((buf), (c)) == NULL) \
 		rs_fatal("could not write to buffer:");
-#endif
+
 
 
 rs_object rs_read(FILE *in)
 {
 	int c;
 	struct rs_buf buf;
-	rs_object obj;
+	rs_object obj = rs_eof;
 	enum state cur_state = ST_START;
 
 	rs_buf_init(&buf);
@@ -270,7 +261,7 @@ rs_object rs_read(FILE *in)
 		case ST_CHAR_N:
 			assert(c == 'n' || c == 'N');
 			/* See if we have #\newline. */
-			get_word(&buf, in, c, 7, cur_state);
+			get_word(&buf, in, c, 7);
 			if (strcmp("n", rs_buf_str(&buf)) == 0) {
 				obj = rs_character_make(c);
 			} else if (strcmp("newline", rs_buf_str(&buf)) == 0) {
@@ -285,7 +276,7 @@ rs_object rs_read(FILE *in)
 		case ST_CHAR_S:
 			assert(c == 's' || c == 'S');
 			/* See if we have #\space. */
-			get_word(&buf, in, c, 5, cur_state);
+			get_word(&buf, in, c, 5);
 			if (strcmp("s", rs_buf_str(&buf)) == 0) {
 				obj = rs_character_make(c);
 			} else if (strcmp("space", rs_buf_str(&buf)) == 0) {
@@ -300,7 +291,7 @@ rs_object rs_read(FILE *in)
 		case ST_CHAR_T:
 			assert(c == 't' || c == 'T');
 			/* See if we have #\tab (which is non-standard). */
-			get_word(&buf, in, c, 3, cur_state);
+			get_word(&buf, in, c, 3);
 			if (strcmp("t", rs_buf_str(&buf)) == 0) {
 				obj = rs_character_make(c);
 			} else if (strcmp("tab", rs_buf_str(&buf)) == 0) {
@@ -331,8 +322,7 @@ static inline rs_object check_num(struct rs_buf *buf, int base)
 }
 
 
-static void get_word(struct rs_buf *buf, FILE *in, int c, int n,
-                           enum state cur_state)
+static void get_word(struct rs_buf *buf, FILE *in, int c, int n)
 {
 	BUF_PUSH(buf, tolower(c));
 	int loop = 1;
