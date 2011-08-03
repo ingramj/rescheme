@@ -55,6 +55,9 @@ struct rs_buf *rs_buf_push(struct rs_buf *buf, char c)
 
 const char *rs_buf_str(struct rs_buf *buf)
 {
+	if (buf->buf == NULL) {
+		return "";
+	}
 	buf->buf[buf->offset] = '\0';
 	return (const char *) buf->buf;
 }

@@ -52,7 +52,7 @@ static void get_word(struct rs_buf *buf, FILE *in, int c, int n);
 	if (c != EOF && ungetc(c, in) == EOF) \
 		rs_fatal("ungetc failed:");
 
-#define BUF_PUSH(buf, c)	  \
+#define BUF_PUSH(buf, c) \
 	if (rs_buf_push((buf), (c)) == NULL) \
 		rs_fatal("could not write to buffer:");
 
@@ -173,6 +173,8 @@ rs_object rs_read(FILE *in)
 				case '+': case '-':
 					BUF_PUSH(&buf, c);
 					break;
+				case DELIM:
+					rs_fatal("expected a digit");
 				default:
 					PUSH_BACK(c, in);
 				}
