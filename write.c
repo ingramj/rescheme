@@ -17,6 +17,10 @@ int rs_write(FILE *out, rs_object obj)
 		} else {
 			result = fprintf(out, "#\\%c", (char)c);
 		}
+	} else if (rs_boolean_p(obj)) {
+		result = fprintf(out, "#%c", obj == rs_true ? 't' : 'f');
+	} else if (rs_null_p(obj)) {
+		result = fprintf(out, "()");
 	} else {
 		rs_fatal("illegal object type");
 	}

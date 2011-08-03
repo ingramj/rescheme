@@ -57,6 +57,29 @@ static inline rs_character rs_character_value(rs_object obj) {
 	return (rs_character)(obj >> rs_object_tag_bits);
 }
 
+/* Booleans, null, and end-of-file */
+
+/* These objects all share a type tag of 3. However, since there are only 4
+   "values", and they are (with the exception of the booleans) unrelated to one
+   another, we'll just define them directly.
+*/
+#define rs_true  3  // 0011
+#define rs_false 7  // 0111
+#define rs_null  11 // 1011
+#define rs_eof   15 // 1111
+
+static inline int rs_boolean_p(rs_object obj) {
+	return obj == rs_true || obj == rs_false;
+}
+
+static inline int rs_null_p(rs_object obj) {
+	return obj == rs_null;
+}
+
+static inline int rs_eof_p(rs_object obj) {
+	return obj == rs_eof;
+}
+
 
 /**** read.c - s-expression parsing. ****/
 

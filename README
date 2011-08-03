@@ -12,7 +12,8 @@ Compilation and Usage
   If you don't have clang installed, change the first line of Makefile to
 "CC = gcc", or whatever is appropriate. There are no external dependencies.
 
-So far, only integer and character literals are supported.
+So far, ReScheme is just a pretty-printer, and doesn't evaluate expressions.
+Integers, characters, booleans, and null have been implemented.
 
     $ make
     $ ./rescheme
@@ -34,6 +35,10 @@ So far, only integer and character literals are supported.
     #\B
     > #\newline
     #\newline
+    > #T
+    #t
+    > ()
+    ()
     > <Ctrl-D>
     $
 

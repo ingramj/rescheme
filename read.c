@@ -90,7 +90,7 @@ rs_object rs_read(FILE *in)
 				while ((c = getc(in)) != '\n' && c != EOF) ;
 				break;
 			case EOF:
-				obj = EOF;  // Eventually we'll have an actual eof object.
+				obj = rs_eof;
 				cur_state = ST_END;
 				break;
 			case DIGIT:
@@ -112,6 +112,15 @@ rs_object rs_read(FILE *in)
 				break;
 			case '#':
 				cur_state = ST_HASH;
+				break;
+			case '(':
+				c = getc(in);
+				if (c == ')') {
+					obj = rs_null;
+					cur_state = ST_END;
+				} else {
+					rs_fatal("non-empty lists have not been implemented");
+				}
 				break;
 			default:
 				rs_fatal("invalid expression");
@@ -151,6 +160,16 @@ rs_object rs_read(FILE *in)
 			case '\\':
 				cur_state = ST_CHARACTER;
 				is_fixnum = 0;
+				break;
+			case 't': case 'T':
+				obj = rs_true;
+				is_fixnum = 0;
+				cur_state = ST_END;
+				break;
+			case 'f': case 'F':
+				obj = rs_false;
+				is_fixnum = 0;
+				cur_state = ST_END;
 				break;
 			default:
 				rs_fatal("expected a radix, or a character literal");

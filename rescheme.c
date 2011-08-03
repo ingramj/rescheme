@@ -8,7 +8,7 @@ int main(void)
 	for (;;) {
 		printf("> ");
 		obj = rs_read(stdin);
-		if (obj == EOF) break;
+		if (rs_eof_p(obj)) break;
 		obj = rs_eval(obj);
 		rs_write(stdout, obj);
 		printf("\n");
