@@ -1,4 +1,5 @@
 #include "rescheme.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
@@ -60,6 +61,8 @@ static void get_word(struct rs_buf *buf, FILE *in, int c, int n);
 
 rs_object rs_read(FILE *in)
 {
+	assert(in != NULL);
+
 	int c;
 	struct rs_buf buf;
 	rs_object obj = rs_eof;
@@ -316,6 +319,9 @@ rs_object rs_read(FILE *in)
 
 static inline rs_object check_num(struct rs_buf *buf, int base)
 {
+	assert(buf != NULL);
+	assert(base == 10 || base == 2 || base == 8 || base == 16);
+
 	long value = strtol(rs_buf_str(buf), NULL, base);
 	if (value < rs_fixnum_min || value > rs_fixnum_max) {
 		rs_fatal("number out of range");
@@ -326,6 +332,9 @@ static inline rs_object check_num(struct rs_buf *buf, int base)
 
 static void get_word(struct rs_buf *buf, FILE *in, int c, int n)
 {
+	assert(buf != NULL);
+	assert(in != NULL);
+
 	BUF_PUSH(buf, tolower(c));
 	int loop = 1;
 	while (loop) {

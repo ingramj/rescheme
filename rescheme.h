@@ -161,8 +161,8 @@ const char *rs_buf_str(struct rs_buf *buf);
 
 struct rs_buf {
 	char *buf;
-	size_t offset;
-	size_t capacity;
+	size_t off;
+	size_t cap;
 };
 
 void eprintf(int status, char const * const func, char const * const fmt, ...);

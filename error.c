@@ -1,5 +1,6 @@
 #include "rescheme.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -10,12 +11,15 @@
 
 void eprintf(int status, char const * const func, char const * const fmt, ...)
 {
+	assert(func != NULL);
+	assert(fmt != NULL);
+
 	int olderr = errno;
 	char buf[BUFSIZE];
 	int bytes;
 	va_list argv;
 
-	(void) fflush(stderr);
+	(void) fflush(stdout);
 
 	bytes = snprintf(buf, BUFSIZE, "%s: ", func);
 
@@ -30,7 +34,8 @@ void eprintf(int status, char const * const func, char const * const fmt, ...)
 
 	fprintf(stderr, "%s\n", buf);
 	if (bytes >= BUFSIZE - 1) {
-		fprintf(stderr, "warning: error message from %s has been truncated.\n", func);
+		fprintf(stderr, "warning: error message from %s has been truncated.\n",
+		        func);
 	}
 
 	errno = olderr;

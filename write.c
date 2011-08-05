@@ -1,8 +1,12 @@
 #include "rescheme.h"
 
+#include <assert.h>
+
 
 int rs_write(FILE *out, rs_object obj)
 {
+	assert(out != NULL);
+
 	int result;
 	if (rs_fixnum_p(obj)) {
 		result = fprintf(out, "%ld", (long)rs_fixnum_value(obj));
