@@ -5,6 +5,8 @@
 #ifndef _RESCHEME_P_H
 #define _RESCHEME_P_H
 
+#include <assert.h>
+
 /* Inline function defintions, and declarations that need to be globally
    visible, but should not be directly used.
 */
@@ -35,6 +37,7 @@ static inline rs_object rs_fixnum_to_obj(rs_fixnum val) {
 }
 
 static inline rs_fixnum rs_obj_to_fixnum(rs_object obj) {
+	assert(rs_fixnum_p(obj));
 	return (rs_fixnum)(obj >> _TAG_BITS);
 }
 
@@ -47,6 +50,7 @@ static inline rs_object rs_character_to_obj(rs_character val) {
 }
 
 static inline rs_character rs_obj_to_character(rs_object obj) {
+	assert(rs_character_p(obj));
 	return (rs_character)(obj >> _TAG_BITS);
 }
 
@@ -79,14 +83,20 @@ static inline int rs_symbol_p(rs_object obj) {
 }
 
 static inline rs_object rs_symbol_to_obj(rs_symbol *sym) {
+	assert(sym != NULL);
+	assert(sym->type == RS_SYMBOL);
 	return (rs_object)sym;
 }
 
 static inline rs_symbol *rs_obj_to_symbol(rs_object obj) {
+	assert(rs_symbol_p(obj));
 	return (rs_symbol*)obj;
 }
 
 static inline const char *rs_symbol_cstr(rs_symbol *sym) {
+	assert(sym != NULL);
+	assert(sym->type == RS_SYMBOL);
+	assert(sym->val.sym != NULL);
 	return sym->val.sym;
 }
 
