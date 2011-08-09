@@ -1,3 +1,5 @@
+v0.2  (8 Aug 2011)
+    * Character literals, booleans, and null are supported.
 v0.1  (2 Aug 2011)
     * There is a simple REPL for interactive use.
     * Integers are supported, in several bases.

@@ -2,7 +2,7 @@
 
 int main(void)
 {
-	printf("ReScheme v0.1\n");
+	printf("ReScheme v0.2\n");
 
 	rs_object obj;
 	for (;;) {
