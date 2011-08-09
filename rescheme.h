@@ -1,6 +1,8 @@
 #ifndef _RESCHEME_H
 #define _RESCHEME_H
 
+#define _POSIX_C_SOURCE 200809L
+
 /* The ReScheme "public" API. Typedefs, functions, an macros declared here may
    be directly used in any compilation unit.
 */
@@ -18,10 +20,15 @@
 */
 typedef long rs_object;
 
+
+static inline int rs_immediate_p(rs_object obj);
+static inline int rs_heap_p(rs_object obj);
+
+
 /* In general, each type will have 3 functions. For a type X, the functions are:
-   1) rs_X_p(rs_object obj) -- checks if obj is of type X.
-   2) rs_X_to_obj(rs_X val) -- make val into an rs_object.
-   3) rs_obj_to_X(rs_object obj) -- get a value of type X from obj.
+   * rs_X_p(rs_object obj) -- checks if obj is of type X.
+   * rs_X_to_obj(rs_X val) -- make val into an rs_object.
+   * rs_obj_to_X(rs_object obj) -- get a value of type X from obj.
 */
 
 /** Fixnums **/
@@ -57,6 +64,34 @@ extern const rs_object rs_eof;
 static inline int rs_boolean_p(rs_object obj);
 static inline int rs_null_p(rs_object obj);
 static inline int rs_eof_p(rs_object obj);
+
+
+/* Symbols, strings, lists, etc. are all heap objects. They have two additional
+   functions:
+   * rs_object rs_X_create(...)
+       Allocate and initialize an rs_X. The arguments depend on the type: a
+       const char* for rs_symbol or rs_string, for example.
+   * void rs_X_release(rs_X *obj)
+       Perform any cleanup that is required when an rs_X is no longer needed,
+       such as freeing memory, or closing a file. Eventually there will be a
+       garbage collector that will call this function whenever it collects an
+       object. For now, it must be called manually.
+*/
+
+struct rs_hobject;
+
+
+/** Symbols **/
+typedef struct rs_hobject rs_symbol;
+
+static inline int rs_symbol_p(rs_object obj);
+static inline rs_object rs_symbol_to_obj(rs_symbol *sym);
+static inline rs_symbol *rs_obj_to_symbol(rs_object obj);
+rs_object rs_symbol_create(const char *name);
+void rs_symbol_release(rs_symbol *sym);
+
+/* Get the C string representation of sym. */
+static inline const char *rs_symbol_cstr(rs_symbol *sym);
 
 
 /**** read.c - s-expression parsing. ****/

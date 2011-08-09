@@ -12,6 +12,10 @@ int main(void)
 		obj = rs_eval(obj);
 		rs_write(stdout, obj);
 		printf("\n");
+
+		if (rs_symbol_p(obj)) {
+			rs_symbol_release(rs_obj_to_symbol(obj));
+		}
 	}
 	return 0;
 }
