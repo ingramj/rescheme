@@ -32,7 +32,7 @@ static void get_word(struct rs_buf *buf, FILE *in, int c, int n);
 #define WS \
 	' ': case '\t': case '\r': case '\n'
 
-#define DELIM WS
+#define DELIM WS: case ';'
 
 #define BIN_DIGIT '0': case '1'
 
