@@ -20,8 +20,8 @@ typedef long rs_object;
 
 /* In general, each type will have 3 functions. For a type X, the functions are:
    1) rs_X_p(rs_object obj) -- checks if obj is of type X.
-   2) rs_X_make(rs_X val) -- make val into an rs_object.
-   3) rs_X_value(rs_object obj) -- get a value of type X from obj.
+   2) rs_X_to_obj(rs_X val) -- make val into an rs_object.
+   3) rs_obj_to_X(rs_object obj) -- get a value of type X from obj.
 */
 
 /** Fixnums **/
@@ -32,8 +32,8 @@ extern const long rs_fixnum_min;
 extern const long rs_fixnum_max;
 
 static inline int rs_fixnum_p(rs_object obj);
-static inline rs_object rs_fixnum_make(rs_fixnum val);
-static inline rs_fixnum rs_fixnum_value(rs_object obj);
+static inline rs_object rs_fixnum_to_obj(rs_fixnum val);
+static inline rs_fixnum rs_obj_to_fixnum(rs_object obj);
 
 /** Characters **/
 
@@ -41,8 +41,8 @@ static inline rs_fixnum rs_fixnum_value(rs_object obj);
 typedef short rs_character;
 
 static inline int rs_character_p(rs_object obj);
-static inline rs_object rs_character_make(rs_character val);
-static inline rs_character rs_character_value(rs_object obj);
+static inline rs_object rs_character_to_obj(rs_character val);
+static inline rs_character rs_obj_to_character(rs_object obj);
 
 /** Booleans, null, and end-of-file **/
 /* Since there are only two boolean values, and a single value each for null

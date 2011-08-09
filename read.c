@@ -251,7 +251,7 @@ rs_object rs_read(FILE *in)
 					switch(d) {
 					case DELIM:
 						PUSH_BACK(d, in);
-						obj = rs_character_make(c);
+						obj = rs_character_to_obj(c);
 						cur_state = ST_END;
 						break;
 					default:
@@ -268,9 +268,9 @@ rs_object rs_read(FILE *in)
 			/* See if we have #\newline. */
 			get_word(&buf, in, c, 7);
 			if (strcmp("n", rs_buf_str(&buf)) == 0) {
-				obj = rs_character_make(c);
+				obj = rs_character_to_obj(c);
 			} else if (strcmp("newline", rs_buf_str(&buf)) == 0) {
-				obj = rs_character_make('\n');
+				obj = rs_character_to_obj('\n');
 			} else {
 				rs_fatal("unknown character literal (#\\%s)",
 				         rs_buf_str(&buf));
@@ -283,9 +283,9 @@ rs_object rs_read(FILE *in)
 			/* See if we have #\space. */
 			get_word(&buf, in, c, 5);
 			if (strcmp("s", rs_buf_str(&buf)) == 0) {
-				obj = rs_character_make(c);
+				obj = rs_character_to_obj(c);
 			} else if (strcmp("space", rs_buf_str(&buf)) == 0) {
-				obj = rs_character_make(' ');
+				obj = rs_character_to_obj(' ');
 			} else {
 				rs_fatal("unknown character literal (#\\%s)",
 				         rs_buf_str(&buf));
@@ -298,9 +298,9 @@ rs_object rs_read(FILE *in)
 			/* See if we have #\tab (which is non-standard). */
 			get_word(&buf, in, c, 3);
 			if (strcmp("t", rs_buf_str(&buf)) == 0) {
-				obj = rs_character_make(c);
+				obj = rs_character_to_obj(c);
 			} else if (strcmp("tab", rs_buf_str(&buf)) == 0) {
-				obj = rs_character_make('\t');
+				obj = rs_character_to_obj('\t');
 			} else {
 				rs_fatal("unknown character literal (#\\%s)",
 				         rs_buf_str(&buf));
@@ -326,7 +326,7 @@ static inline rs_object check_num(struct rs_buf *buf, int base)
 	if (value < rs_fixnum_min || value > rs_fixnum_max) {
 		rs_fatal("number out of range");
 	}
-	return rs_fixnum_make(value);
+	return rs_fixnum_to_obj(value);
 }
 
 

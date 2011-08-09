@@ -9,9 +9,9 @@ int rs_write(FILE *out, rs_object obj)
 
 	int result;
 	if (rs_fixnum_p(obj)) {
-		result = fprintf(out, "%ld", (long)rs_fixnum_value(obj));
+		result = fprintf(out, "%ld", (long)rs_obj_to_fixnum(obj));
 	} else if (rs_character_p(obj)) {
-		rs_character c = rs_character_value(obj);
+		rs_character c = rs_obj_to_character(obj);
 		if ((char)c == '\n') {
 			result = fprintf(out, "#\\newline");
 		} else if ((char)c == '\t') {
