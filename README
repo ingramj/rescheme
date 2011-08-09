@@ -13,32 +13,30 @@ Compilation and Usage
 "CC = gcc", or whatever is appropriate. There are no external dependencies.
 
 So far, ReScheme is just a pretty-printer, and doesn't evaluate expressions.
-Integers, characters, booleans, and null have been implemented.
+Integers, characters, booleans, null, and symbols have been implemented.
 
     $ make
     $ ./rescheme
     > 123
     123
-    > -9876
-    -9876
-    > +45
-    45
     > #b1011
     11
-    > #o0644
-    420
     > #x-14bead
     -1359533
     > #\a
     #\a
-    > #\B
-    #\B
     > #\newline
     #\newline
     > #T
     #t
     > ()
     ()
+    > asdf-123
+    asdf-123
+    > <=>
+    <=>
+    > ReScheme
+    rescheme
     > <Ctrl-D>
     $
 

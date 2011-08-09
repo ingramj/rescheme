@@ -12,7 +12,8 @@
 
 
 enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL, ST_HEX,
-             ST_CHARACTER, ST_CHAR_N, ST_CHAR_S, ST_CHAR_T, ST_END };
+             ST_CHARACTER, ST_CHAR_N, ST_CHAR_S, ST_CHAR_T, ST_SYMBOL,
+             ST_END };
 
 
 /* Turn the string in buf into an rs_fixnum, or die trying. */
@@ -36,18 +37,35 @@ static void get_word(struct rs_buf *buf, FILE *in, int c, int n);
 #define BIN_DIGIT '0': case '1'
 
 #define OCT_DIGIT \
-	'0': case '1': case '2': case '3': \
-	case '4': case '5': case '6': case '7'
+	BIN_DIGIT: case '2': case '3': case '4': case '5': case '6': case '7'
 
 #define DIGIT \
-	'0': case '1': case '2': case '3': case '4': \
-	case '5': case '6': case '7': case '8': case '9'
+	OCT_DIGIT: case '8': case '9'
 
 #define HEX_DIGIT \
-	'0': case '1': case '2': case '3': case '4': \
-	case '5': case '6': case '7': case '8': case '9': \
-	case 'a': case 'A': case 'b': case 'B': case 'c': case 'C': \
+	DIGIT: case 'a': case 'A': case 'b': case 'B': case 'c': case 'C': \
 	case 'd': case 'D': case 'e': case 'E': case 'f': case 'F'
+
+#define LC_LETTER \
+	'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': \
+	case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': \
+	case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': \
+	case 'v': case 'w': case 'x': case 'y': case 'z'
+
+#define UC_LETTER \
+	'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': \
+	case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': \
+	case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': \
+	case 'V': case 'W': case 'X': case 'Y': case 'Z'
+
+#define SYMBOL_INIT \
+	LC_LETTER: case UC_LETTER: case '!': case '$': case '%': case '*': \
+	case '/': case ':': case '<': case '=': case '>': case '?': case '^': \
+	case '_': case '~'
+
+#define SYMBOL_SUB \
+	SYMBOL_INIT: case DIGIT: case '+': case '-': case '.': case '@'
+
 
 #define PUSH_BACK(c, in) \
 	if (c != EOF && ungetc(c, in) == EOF) \
@@ -93,15 +111,20 @@ rs_object rs_read(FILE *in)
 				break;
 			case '+': case '-':
 				BUF_PUSH(&buf, c);
-				/* Look ahead to see if it's followed by a digit. */
+				/* Look ahead to see if it's a number or a symbol. */
 				c = getc(in);
 				switch (c) {
 				case DIGIT:
 					BUF_PUSH(&buf, c);
 					cur_state = ST_DECIMAL;
 					break;
+				case DELIM:
+					PUSH_BACK(c, in);
+					obj = rs_symbol_create(rs_buf_str(&buf));
+					cur_state = ST_END;
+					break;
 				default:
-					rs_fatal("expected a digit");
+					rs_fatal("expected a digit or a delimiter");
 				}
 				break;
 			case '#':
@@ -115,6 +138,10 @@ rs_object rs_read(FILE *in)
 				} else {
 					rs_fatal("non-empty lists have not been implemented");
 				}
+				break;
+			case SYMBOL_INIT:
+				BUF_PUSH(&buf, tolower(c));
+				cur_state = ST_SYMBOL;
 				break;
 			default:
 				rs_fatal("invalid expression");
@@ -306,6 +333,21 @@ rs_object rs_read(FILE *in)
 				         rs_buf_str(&buf));
 			}
 			cur_state = ST_END;
+			break;
+
+		case ST_SYMBOL:
+			switch (c) {
+			case SYMBOL_SUB:
+				BUF_PUSH(&buf, tolower(c));
+				break;
+			case DELIM:
+				PUSH_BACK(c, in);
+				obj = rs_symbol_create(rs_buf_str(&buf));
+				cur_state = ST_END;
+				break;
+			default:
+				rs_fatal("'%c' cannot appear in an identifier", c);
+			}
 			break;
 
 		default:
