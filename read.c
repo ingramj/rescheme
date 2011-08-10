@@ -5,91 +5,109 @@
 #include <limits.h>
 #include <string.h>
 
-/* From what I can tell, the normal way to parse Lisp is with a recursive
-   descent parser. I'm taking a different approach, and hand-writing a
-   pushdown automata-based parser.
+/* The ReScheme parser is a state machine. It consists of a large switch inside
+   of a loop. The switch has a case for each state that the parser can be in. A
+   new input character is read each time the loop executes, and control jumps
+   to the current state's case. Then the input character is used to determine
+   what the next state should be. The loop ends when the current state is
+   ST_END.
+
+   NOTE: Later, when lists are added to ReScheme, the parser will have a stack
+   to handle recursion. That will make it a pushdown automata, and it will be
+   equivalent to the recursive descent parsers that are typically used to parse
+   Lisps. Switching states is analogous to calling functions, except 1) they
+   don't return to the previous state when they're finished (no call stack),
+   and 2) a new character is read in automatically at each state change.
 */
-
-
 enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL, ST_HEX,
              ST_CHARACTER, ST_CHAR_N, ST_CHAR_S, ST_CHAR_T, ST_SYMBOL,
              ST_END };
 
+/* More can happen inside a state than just choosing the next state. The input
+   character can be pushed back so that the next state (or the next call to the
+   parser) will see it.
+ */
+#define PUSH_BACK(c, in) \
+	if (c != EOF && ungetc(c, in) == EOF) \
+		rs_fatal("ungetc failed:");
 
-/* Turn the string in buf into an rs_fixnum, or die trying. */
+/* Characters can also be pushed into a buffer. This can be done to gather the
+   digits of a number, or the characters of a symbol.
+*/
+#define BUF_PUSH(buf, c) \
+	if (rs_buf_push((buf), (c)) == NULL) \
+		rs_fatal("could not write to buffer:");
+
+/* This fuction turns a buffer full of digits into a ReScheme fixnum. */
 static inline rs_object check_num(struct rs_buf *buf, int base);
 
-/* Read a 'word' of up to n characters into buf, starting with c. The word ends
-   when a delimiter is read, or n characters have been read. */
+/* Sometimes it's helpful to take a shortcut, and read in several characters at
+   once. This function reads characters into a buffer, starting with c, and
+   reading the rest from in. It stops when either n characters have been read,
+   or it reads in a delimiter (see below).
+*/
 static void get_word(struct rs_buf *buf, FILE *in, int c, int n);
 
-
-/* I don't know if these defines are awesome, or abominations, but they do
-   make the state machine code more concise.
+/* Inside each state (most of them, anyway) is an inner switch that checks the
+   input character to determine what actions to take. Since many character will
+   result in the same action, it makes sense to group them together. These
+   macros are ugly, but they make the switches much more concise and legible.
 */
-
-/* They call it whitespace, but on my screen it's black...  */
 #define WS \
 	' ': case '\t': case '\r': case '\n'
-
 #define DELIM WS: case ';'
-
 #define BIN_DIGIT '0': case '1'
-
 #define OCT_DIGIT \
 	BIN_DIGIT: case '2': case '3': case '4': case '5': case '6': case '7'
-
 #define DIGIT \
 	OCT_DIGIT: case '8': case '9'
-
 #define HEX_DIGIT \
 	DIGIT: case 'a': case 'A': case 'b': case 'B': case 'c': case 'C': \
 	case 'd': case 'D': case 'e': case 'E': case 'f': case 'F'
-
 #define LC_LETTER \
 	'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': \
 	case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': \
 	case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': \
 	case 'v': case 'w': case 'x': case 'y': case 'z'
-
 #define UC_LETTER \
 	'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': \
 	case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': \
 	case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': \
 	case 'V': case 'W': case 'X': case 'Y': case 'Z'
-
 #define SYMBOL_INIT \
 	LC_LETTER: case UC_LETTER: case '!': case '$': case '%': case '*': \
 	case '/': case ':': case '<': case '=': case '>': case '?': case '^': \
 	case '_': case '~'
-
 #define SYMBOL_SUB \
 	SYMBOL_INIT: case DIGIT: case '+': case '-': case '.': case '@'
 
 
-#define PUSH_BACK(c, in) \
-	if (c != EOF && ungetc(c, in) == EOF) \
-		rs_fatal("ungetc failed:");
-
-#define BUF_PUSH(buf, c) \
-	if (rs_buf_push((buf), (c)) == NULL) \
-		rs_fatal("could not write to buffer:");
-
-
-
+/* The parser function. It reads characters from in, and turns them into an
+   object. Or it dies when there's a syntax error.
+*/
 rs_object rs_read(FILE *in)
 {
 	assert(in != NULL);
 
-	int c;
-	struct rs_buf buf;
+	/* When an object is recognized, it is saved in obj, and then the state is
+	   changed to ST_END.
+	*/
 	rs_object obj = rs_eof;
+
+	/* Changing states is done by assigning to cur_state, and then breaking out
+	   of the switch.
+	*/
 	enum state cur_state = ST_START;
 
+	/* The buffer is used to store characters, so that they can be used when
+	   creating objects. Buffers have to be initialized before use.
+	 */
+	struct rs_buf buf;
 	rs_buf_init(&buf);
 
+
 	while (cur_state != ST_END) {
-		c = getc(in);
+		int c = getc(in);
 
 		switch (cur_state) {
 		case ST_START:
@@ -164,6 +182,10 @@ rs_object rs_read(FILE *in)
 			break;
 
 		case ST_HASH: {
+			/* Lots of things can start with a # in Scheme. Most of the cases
+			   are for numbers, which need a little extra work at the end of
+			   this state. This flag is set to zero if that work isn't needed.
+			*/
 			int is_fixnum = 1;
 			switch (c) {
 			case 'b': case 'B':
@@ -258,6 +280,10 @@ rs_object rs_read(FILE *in)
 			break;
 
 		case ST_CHARACTER:
+			/* If the character starts with an 'n', 's', or 't', then we need
+			   to see if its actually a 'newline', 'space', or 'tab'. That's
+			   handled by other states.
+			*/
 			switch (c) {
 			case 'n': case 'N':
 				PUSH_BACK(c, in);
@@ -272,8 +298,9 @@ rs_object rs_read(FILE *in)
 				cur_state = ST_CHAR_T;
 				break;
 			default:
+				/* Otherwise, read in a character, and make sure that it's
+				   followed by a delimiter. */
 				if (isgraph(c)) {
-					/* Make sure the next character is a delimiter. */
 					char d = getc(in);
 					switch(d) {
 					case DELIM:
@@ -354,6 +381,7 @@ rs_object rs_read(FILE *in)
 			rs_fatal("got into an impossible state");
 		}
 	}
+
 	rs_buf_reset(&buf);
 	return obj;
 }
