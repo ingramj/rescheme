@@ -25,6 +25,21 @@ static struct rs_hobject *rs_alloc_obj(void);
 static void rs_free_obj(struct rs_hobject *obj);
 
 
+static void rs_symbol_release(rs_symbol *sym);
+
+void rs_object_release(rs_object obj)
+{
+	if (rs_immediate_p(obj)) return;
+
+	if (rs_symbol_p(obj)) {
+		rs_symbol_release(rs_obj_to_symbol(obj));
+	} else {
+		rs_fatal("unknown object type");
+	}
+	rs_free_obj((struct rs_hobject*)obj);
+}
+
+
 rs_object rs_symbol_create(const char *name)
 {
 	assert(name != NULL);
@@ -38,14 +53,13 @@ rs_object rs_symbol_create(const char *name)
 }
 
 
-void rs_symbol_release(rs_symbol *sym)
+static void rs_symbol_release(rs_symbol *sym)
 {
 	assert(sym != NULL);
 	assert(sym->val.sym != NULL);
 	assert(rs_symbol_p((rs_object)sym));
 
 	free(sym->val.sym);
-	rs_free_obj(sym);
 }
 
 

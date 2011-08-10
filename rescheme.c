@@ -13,9 +13,7 @@ int main(void)
 		rs_write(stdout, obj);
 		printf("\n");
 
-		if (rs_symbol_p(obj)) {
-			rs_symbol_release(rs_obj_to_symbol(obj));
-		}
+		rs_object_release(obj);
 	}
 	return 0;
 }

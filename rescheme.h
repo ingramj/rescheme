@@ -66,19 +66,17 @@ static inline int rs_null_p(rs_object obj);
 static inline int rs_eof_p(rs_object obj);
 
 
-/* Symbols, strings, lists, etc. are all heap objects. They have two additional
-   functions:
+/* Symbols, strings, lists, etc. are all heap objects. They have an additional
+   function:
    * rs_object rs_X_create(...)
        Allocate and initialize an rs_X. The arguments depend on the type: a
        const char* for rs_symbol or rs_string, for example.
-   * void rs_X_release(rs_X *obj)
-       Perform any cleanup that is required when an rs_X is no longer needed,
-       such as freeing memory, or closing a file. Eventually there will be a
-       garbage collector that will call this function whenever it collects an
-       object. For now, it must be called manually.
 */
 
 struct rs_hobject;
+
+/* Perform any type-specific cleanup required for obj. */
+void rs_object_release(rs_object obj);
 
 
 /** Symbols **/
@@ -88,7 +86,6 @@ static inline int rs_symbol_p(rs_object obj);
 static inline rs_object rs_symbol_to_obj(rs_symbol *sym);
 static inline rs_symbol *rs_obj_to_symbol(rs_object obj);
 rs_object rs_symbol_create(const char *name);
-void rs_symbol_release(rs_symbol *sym);
 
 /* Get the C string representation of sym. */
 static inline const char *rs_symbol_cstr(rs_symbol *sym);
