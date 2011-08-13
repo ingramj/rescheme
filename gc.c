@@ -5,7 +5,7 @@
 
 
 static struct rs_hobject *heap = NULL;
-
+static int next_obj = 0;
 
 static int rs_gc_next_obj(void);
 static void rs_gc_mark(void);
@@ -63,13 +63,19 @@ struct rs_hobject *rs_hobject_alloc(void)
 
 static int rs_gc_next_obj(void)
 {
-	int i;
-	for (i = 0; i < HEAP_SIZE; i++) {
+	assert(next_obj >= 0 && next_obj < HEAP_SIZE);
+
+	int i = next_obj;
+	for (;;) {
 		if (!GC_FLAG_ALLOC_P(heap[i].flags)) {
+			next_obj = (i + 1) % HEAP_SIZE;
 			return i;
 		}
+		i = (i + 1) % HEAP_SIZE;
+		if (i == next_obj) {
+			return -1;
+		}
 	}
-	return -1;
 }
 
 
