@@ -12,14 +12,13 @@
 #include <stdio.h>
 
 
-/**** object.c - object model and memory management. ****/
+/**** object.c - object model. ****/
 
 /* An rs_object can be any ReScheme data type. Right now there are fixnums,
    characters, booleans, null, and end-of-file, but soon there will be
    others.
 */
 typedef long rs_object;
-
 
 static inline int rs_immediate_p(rs_object obj);
 static inline int rs_heap_p(rs_object obj);
@@ -76,7 +75,7 @@ static inline int rs_eof_p(rs_object obj);
 struct rs_hobject;
 
 /* Perform any type-specific cleanup required for obj. */
-void rs_object_release(rs_object obj);
+void rs_hobject_release(struct rs_hobject *obj);
 
 
 /** Symbols **/
@@ -108,6 +107,13 @@ rs_object rs_eval(rs_object expr);
 /* Write obj's corresponding s-expression to a file, and return the
    number of bytes written */
 int rs_write(FILE *out, rs_object obj);
+
+
+/**** gc.c - memory allocation and garbage collection. ****/
+
+void rs_gc_init(void);
+void rs_gc_shutdown(void);
+struct rs_hobject *rs_hobject_alloc(void);
 
 
 /**** buffer.c - character buffer data structure. ****/

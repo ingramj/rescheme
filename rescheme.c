@@ -4,6 +4,8 @@ int main(void)
 {
 	printf("ReScheme v0.2\n");
 
+	rs_gc_init();
+
 	rs_object obj;
 	for (;;) {
 		printf("> ");
@@ -12,8 +14,8 @@ int main(void)
 		obj = rs_eval(obj);
 		rs_write(stdout, obj);
 		printf("\n");
-
-		rs_object_release(obj);
 	}
+
+	rs_gc_shutdown();
 	return 0;
 }

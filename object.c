@@ -20,30 +20,22 @@ const rs_object rs_null  = 11;  // 1011
 const rs_object rs_eof   = 15;  // 1111
 
 
-/* Allocate and free heap objects. */
-static struct rs_hobject *rs_alloc_obj(void);
-static void rs_free_obj(struct rs_hobject *obj);
-
-
 static void rs_symbol_release(rs_symbol *sym);
 
-void rs_object_release(rs_object obj)
+void rs_hobject_release(struct rs_hobject *obj)
 {
-	if (rs_immediate_p(obj)) return;
-
-	if (rs_symbol_p(obj)) {
-		rs_symbol_release(rs_obj_to_symbol(obj));
+	if (rs_symbol_p((rs_object)obj)) {
+		rs_symbol_release(obj);
 	} else {
 		rs_fatal("unknown object type");
 	}
-	rs_free_obj((struct rs_hobject*)obj);
 }
 
 
 rs_object rs_symbol_create(const char *name)
 {
 	assert(name != NULL);
-	rs_symbol *sym = rs_alloc_obj();
+	rs_symbol *sym = rs_hobject_alloc();
 	sym->type = RS_SYMBOL;
 	sym->val.sym = strdup(name);
 	if (sym->val.sym == NULL) {
@@ -60,21 +52,4 @@ static void rs_symbol_release(rs_symbol *sym)
 	assert(rs_symbol_p((rs_object)sym));
 
 	free(sym->val.sym);
-}
-
-
-static struct rs_hobject *rs_alloc_obj(void)
-{
-	struct rs_hobject *obj = malloc(sizeof(struct rs_hobject));
-	if (obj == NULL) {
-		rs_fatal("could not allocate heap object:");
-	}
-	return obj;
-}
-
-
-static void rs_free_obj(struct rs_hobject *obj)
-{
-	assert(obj != NULL);
-	free(obj);
 }

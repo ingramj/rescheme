@@ -76,6 +76,7 @@ struct rs_hobject {
 	union {
 		char *sym;
 	} val;
+	char flags;
 };
 
 static inline int rs_symbol_p(rs_object obj) {
