@@ -1,5 +1,5 @@
 #ifndef _RESCHEME_INSIDE_
-#error "Include \"rescheme.h\" instead."
+#error Include "rescheme.h" instead.
 #endif
 
 #ifndef _RESCHEME_P_H

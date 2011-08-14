@@ -175,5 +175,6 @@ const char *rs_buf_str(struct rs_buf *buf);
 
 #define _RESCHEME_INSIDE_
 #include "rescheme_p.h"
+#undef  _RESCHEME_INSIDE_
 
 #endif
