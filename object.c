@@ -37,10 +37,8 @@ rs_object rs_symbol_create(const char *name)
 	assert(name != NULL);
 	rs_symbol *sym = rs_hobject_alloc();
 	sym->type = RS_SYMBOL;
-	sym->val.sym = strdup(name);
-	if (sym->val.sym == NULL) {
-		rs_fatal("could not allocate symbol:");
-	}
+	sym->val.sym = rs_symtab_insert(name);
+
 	return rs_symbol_to_obj(sym);
 }
 
@@ -51,5 +49,5 @@ static void rs_symbol_release(rs_symbol *sym)
 	assert(sym->val.sym != NULL);
 	assert(rs_symbol_p((rs_object)sym));
 
-	free(sym->val.sym);
+	rs_symtab_remove(sym->val.sym);
 }

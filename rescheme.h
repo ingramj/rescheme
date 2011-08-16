@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 
+
 /**** object.c - object model. ****/
 
 /* An rs_object can be any ReScheme data type. Right now there are fixnums,
@@ -30,6 +31,7 @@ static inline int rs_heap_p(rs_object obj);
    * rs_obj_to_X(rs_object obj) -- get a value of type X from obj.
 */
 
+
 /** Fixnums **/
 typedef long rs_fixnum;
 
@@ -41,6 +43,7 @@ static inline int rs_fixnum_p(rs_object obj);
 static inline rs_object rs_fixnum_to_obj(rs_fixnum val);
 static inline rs_fixnum rs_obj_to_fixnum(rs_object obj);
 
+
 /** Characters **/
 
 /* Assume that sizeof(short) >= 2. */
@@ -49,6 +52,7 @@ typedef short rs_character;
 static inline int rs_character_p(rs_object obj);
 static inline rs_object rs_character_to_obj(rs_character val);
 static inline rs_character rs_obj_to_character(rs_object obj);
+
 
 /** Booleans, null, and end-of-file **/
 /* Since there are only two boolean values, and a single value each for null
@@ -90,16 +94,19 @@ rs_object rs_symbol_create(const char *name);
 static inline const char *rs_symbol_cstr(rs_symbol *sym);
 
 
+
 /**** read.c - s-expression parsing. ****/
 
 /* Read an s-expression from a file, and return the resulting object. */
 rs_object rs_read(FILE *in);
 
 
+
 /**** eval.c - object evaluation. ****/
 
 /* Evaluate expr, and return the result. */
 rs_object rs_eval(rs_object expr);
+
 
 
 /**** write.c - s-expression output. ****/
@@ -109,11 +116,30 @@ rs_object rs_eval(rs_object expr);
 int rs_write(FILE *out, rs_object obj);
 
 
+
 /**** gc.c - memory allocation and garbage collection. ****/
 
+/* Initialize the heap and GC. */
 void rs_gc_init(void);
+
+/* Release all of the resources used by every object, and free the memory
+   used for the heap.
+*/
 void rs_gc_shutdown(void);
+
+/* Allocate an object on the heap. */
 struct rs_hobject *rs_hobject_alloc(void);
+
+
+
+/**** symtab.c - symbol table. ****/
+
+/* Add a symbol to the table. Used by rs_symbol_create(). */
+const char *rs_symtab_insert(const char *sym);
+
+/* Remove a symbol from the table. Used by rs_object_release(). */
+void rs_symtab_remove(const char *sym);
+
 
 
 /**** buffer.c - character buffer data structure. ****/
@@ -140,6 +166,7 @@ struct rs_buf *rs_buf_push(struct rs_buf *buf, char c);
    keep it around for long, make a copy and use that instead.
  */
 const char *rs_buf_str(struct rs_buf *buf);
+
 
 
 /**** error.c - error-reporting. ****/
@@ -170,6 +197,8 @@ const char *rs_buf_str(struct rs_buf *buf);
 #else
 # define TRACE(...) rs_nonfatal(__VA_ARGS__)
 #endif
+
+
 
 /**** End of public API. ***/
 

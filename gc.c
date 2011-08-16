@@ -48,6 +48,7 @@ struct rs_hobject *rs_hobject_alloc(void)
 
 	int i;
 	if ((i = rs_gc_next_obj()) < 0) {
+		TRACE("garbage day");
 		rs_gc_mark();
 		rs_gc_sweep();
 		if ((i = rs_gc_next_obj()) < 0) {

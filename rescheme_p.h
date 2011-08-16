@@ -74,7 +74,7 @@ enum rs_hobject_type {
 struct rs_hobject {
 	enum rs_hobject_type type;
 	union {
-		char *sym;
+		const char *sym;
 	} val;
 	char flags;
 };
