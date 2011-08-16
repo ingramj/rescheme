@@ -24,6 +24,9 @@ const char *rs_symtab_insert(const char *sym)
 	struct rs_symtab_entry *entry = rs_symtab_lookup(sym);
 	if (entry != NULL) {
 		entry->count++;
+		if (entry->count < 0) {
+			rs_fatal("refcount overflow for symbol \"%s\"", sym);
+		}
 		return entry->sym;
 	}
 
@@ -62,19 +65,24 @@ void rs_symtab_remove(const char *sym)
 		rs_nonfatal("symbol \"%s\" is not in the table", sym);
 		return;
 	}
+
+	assert(entry->sym != NULL);
+	assert(entry->count > 0);
 	if (strcmp(entry->sym, sym) == 0) {
 		entry->count--;
-		if (entry->count <= 0) {
+		if (entry->count == 0) {
 			rs_symtab[hashval] = entry->next;
 			free((char *)entry->sym);
 			free(entry);
 		}
 		return;
 	}
+
 	while (entry->next != NULL) {
+		assert(entry->next->count > 0);
 		if (strcmp(entry->next->sym, sym) == 0) {
 			entry->next->count--;
-			if (entry->next->count <= 0) {
+			if (entry->next->count == 0) {
 				tmp = entry->next;
 				entry->next = entry->next->next;
 				free((char *)tmp->sym);
@@ -95,6 +103,8 @@ static struct rs_symtab_entry *rs_symtab_lookup(const char *sym)
 	struct rs_symtab_entry *entry = rs_symtab[rs_symtab_hash(sym)];
 
 	while (entry != NULL) {
+		assert(entry->sym != NULL);
+		assert(entry->count > 0);
 		if (strcmp(entry->sym, sym) == 0) {
 			return entry;
 		}
@@ -106,6 +116,8 @@ static struct rs_symtab_entry *rs_symtab_lookup(const char *sym)
 
 static unsigned long rs_symtab_hash(const char *sym)
 {
+	assert(sym != NULL);
+
 	unsigned long hashval;
 
 	// DJB2 hash
