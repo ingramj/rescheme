@@ -94,6 +94,18 @@ rs_object rs_symbol_create(const char *name);
 static inline const char *rs_symbol_cstr(rs_symbol *sym);
 
 
+/** Strings **/
+typedef struct rs_hobject rs_string;
+
+static inline int rs_string_p(rs_object obj);
+static inline rs_object rs_string_to_obj(rs_string *str);
+static inline rs_string *rs_obj_to_string(rs_object obj);
+rs_object rs_string_create(const char *cstr);
+
+/* Get the C string representation of str. */
+static inline char *rs_string_cstr(rs_string *str);
+
+
 
 /**** read.c - s-expression parsing. ****/
 

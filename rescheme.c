@@ -7,6 +7,10 @@ int main(void)
 	rs_gc_init();
 
 	rs_object obj;
+
+	obj = rs_string_create("Hello, World!\n");
+	rs_write(stdout, obj);
+
 	for (;;) {
 		printf("> ");
 		obj = rs_read(stdin);

@@ -25,6 +25,7 @@ static inline int rs_immediate_p(rs_object obj) {
 }
 
 static inline int rs_heap_p(rs_object obj) {
+	assert((void*)obj != NULL);
 	return (obj & _TAG_MASK) == _HOBJECT_TAG;
 }
 
@@ -68,13 +69,14 @@ static inline int rs_eof_p(rs_object obj) {
 
 
 enum rs_hobject_type {
-	RS_SYMBOL
+	RS_SYMBOL, RS_STRING
 };
 
 struct rs_hobject {
 	enum rs_hobject_type type;
 	union {
 		const char *sym;
+		char *str;
 	} val;
 	char flags;
 };
@@ -99,6 +101,28 @@ static inline const char *rs_symbol_cstr(rs_symbol *sym) {
 	assert(sym->type == RS_SYMBOL);
 	assert(sym->val.sym != NULL);
 	return sym->val.sym;
+}
+
+static inline int rs_string_p(rs_object obj) {
+	return rs_heap_p(obj) && ((struct rs_hobject*)obj)->type == RS_STRING;
+}
+
+static inline rs_object rs_string_to_obj(rs_string *str) {
+	assert(str != NULL);
+	assert(str->type == RS_STRING);
+	return (rs_object)str;
+}
+
+static inline rs_string *rs_obj_to_string(rs_object obj) {
+	assert(rs_string_p(obj));
+	return (rs_string*)obj;
+}
+
+static inline char *rs_string_cstr(rs_string *str) {
+	assert(str != NULL);
+	assert(str->type == RS_STRING);
+	assert(str->val.str != NULL);
+	return str->val.str;
 }
 
 

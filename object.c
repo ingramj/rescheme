@@ -21,11 +21,14 @@ const rs_object rs_eof   = 15;  // 1111
 
 
 static void rs_symbol_release(rs_symbol *sym);
+static void rs_string_release(rs_string *str);
 
 void rs_hobject_release(struct rs_hobject *obj)
 {
 	if (rs_symbol_p((rs_object)obj)) {
 		rs_symbol_release(obj);
+	} else if (rs_string_p((rs_object)obj)) {
+		rs_string_release(obj);
 	} else {
 		rs_fatal("unknown object type");
 	}
@@ -45,9 +48,31 @@ rs_object rs_symbol_create(const char *name)
 
 static void rs_symbol_release(rs_symbol *sym)
 {
-	assert(sym != NULL);
-	assert(sym->val.sym != NULL);
 	assert(rs_symbol_p((rs_object)sym));
+	assert(sym->val.sym != NULL);
 
 	rs_symtab_remove(sym->val.sym);
+}
+
+
+rs_object rs_string_create(const char *cstr)
+{
+	assert(cstr != NULL);
+	rs_string *str = rs_hobject_alloc();
+	str->type = RS_STRING;
+	str->val.str = strdup(cstr);
+	if (str->val.str == NULL) {
+		rs_fatal("could not create string object:");
+	}
+
+	return rs_string_to_obj(str);
+}
+
+
+static void rs_string_release(rs_string *str)
+{
+	assert(rs_string_p((rs_object)str));
+	assert(str->val.str != NULL);
+
+	free(str->val.str);
 }

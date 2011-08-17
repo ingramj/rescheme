@@ -27,6 +27,8 @@ int rs_write(FILE *out, rs_object obj)
 		result = fprintf(out, "()");
 	} else if (rs_symbol_p(obj)) {
 		result = fprintf(out, "%s", rs_symbol_cstr(rs_obj_to_symbol(obj)));
+	} else if (rs_string_p(obj)) {
+		result = fprintf(out, "%s", rs_string_cstr(rs_obj_to_string(obj)));
 	} else {
 		rs_fatal("illegal object type");
 	}

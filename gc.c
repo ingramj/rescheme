@@ -23,6 +23,7 @@ static void rs_gc_sweep(void);
 
 void rs_gc_init(void)
 {
+	TRACE("heap size = %ld objects", HEAP_SIZE);
 	heap = calloc(HEAP_SIZE, sizeof(struct rs_hobject));
 	if (heap == NULL) {
 		rs_fatal("cannot allocate heap:");
