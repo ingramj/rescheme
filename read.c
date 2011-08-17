@@ -21,7 +21,7 @@
 */
 enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL, ST_HEX,
              ST_CHARACTER, ST_CHAR_N, ST_CHAR_S, ST_CHAR_T, ST_SYMBOL,
-             ST_END };
+             ST_STRING, ST_ESCAPE, ST_END };
 
 /* More can happen inside a state than just choosing the next state. The input
    character can be pushed back so that the next state (or the next call to the
@@ -160,6 +160,9 @@ rs_object rs_read(FILE *in)
 			case SYMBOL_INIT:
 				BUF_PUSH(&buf, tolower(c));
 				cur_state = ST_SYMBOL;
+				break;
+			case '"':
+				cur_state = ST_STRING;
 				break;
 			default:
 				rs_fatal("invalid expression");
@@ -373,8 +376,59 @@ rs_object rs_read(FILE *in)
 				cur_state = ST_END;
 				break;
 			default:
-				rs_fatal("'%c' cannot appear in an identifier", c);
+				if (isgraph(c)) {
+					rs_fatal("'%c' cannot appear in an identifier", c);
+				} else {
+					rs_fatal("'\\x%02x' cannot appear in an identifier", c);
+				}
 			}
+			break;
+
+		case ST_STRING:
+			switch (c) {
+			case '"':
+				obj = rs_string_create(rs_buf_str(&buf));
+				cur_state = ST_END;
+				break;
+			case '\\':
+				cur_state = ST_ESCAPE;
+				break;
+			default:
+				BUF_PUSH(&buf, c);
+			}
+			break;
+
+		case ST_ESCAPE:
+			switch (c) {
+			case 'n':
+				BUF_PUSH(&buf, '\n');
+				break;
+			case 't':
+				BUF_PUSH(&buf, '\t');
+				break;
+			case '"':
+				BUF_PUSH(&buf, '"');
+				break;
+			case '\\':
+				BUF_PUSH(&buf, '\\');
+				break;
+			case 'r':
+				BUF_PUSH(&buf, '\r');
+				break;
+			case 'b':
+				BUF_PUSH(&buf, '\b');
+				break;
+			case 'a':
+				BUF_PUSH(&buf, '\a');
+				break;
+			default:
+				if (isgraph(c)) {
+					rs_fatal("unknown string escape sequence: \\%c", c);
+				} else {
+					rs_fatal("unknown string escape sequence: \\x%02x", c);
+				}
+			}
+			cur_state = ST_STRING;
 			break;
 
 		default:

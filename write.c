@@ -1,6 +1,10 @@
 #include "rescheme.h"
 
 #include <assert.h>
+#include <ctype.h>
+
+
+static int rs_write_string(FILE *out, rs_string *str);
 
 
 int rs_write(FILE *out, rs_object obj)
@@ -28,9 +32,58 @@ int rs_write(FILE *out, rs_object obj)
 	} else if (rs_symbol_p(obj)) {
 		result = fprintf(out, "%s", rs_symbol_cstr(rs_obj_to_symbol(obj)));
 	} else if (rs_string_p(obj)) {
-		result = fprintf(out, "%s", rs_string_cstr(rs_obj_to_string(obj)));
+		result = rs_write_string(out, rs_obj_to_string(obj));
 	} else {
 		rs_fatal("illegal object type");
 	}
 	return result;
+}
+
+
+static int rs_write_string(FILE *out, rs_string *str)
+{
+	assert(rs_string_cstr(str) != NULL);
+
+	const char *cstr = rs_string_cstr(str);
+	int count = 0;
+	fputc('"', out);
+	while (*cstr != '\0') {
+		switch (*cstr) {
+		case '\n':
+			count += fprintf(out, "\\n");
+			break;
+		case '\t':
+			count += fprintf(out, "\\t");
+			break;
+		case '\"':
+			count += fprintf(out, "\\\"");
+			break;
+		case '\\':
+			count += fprintf(out, "\\\\");
+			break;
+		case '\r':
+			count += fprintf(out, "\\r");
+			break;
+		case '\b':
+			count += fprintf(out, "\\b");
+			break;
+		case '\a':
+			count += fprintf(out, "\\a");
+			break;
+		case ' ':
+			fputc(' ', out);
+			count++;
+			break;
+		default:
+			if (isgraph(*cstr)) {
+				fputc(*cstr, out);
+				count++;
+			} else {
+				count += fprintf(out, "\\x%02x", *cstr);
+			}
+		}
+		cstr++;
+	}
+	fputc('"', out);
+	return 2 + count;
 }
