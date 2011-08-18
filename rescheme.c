@@ -2,7 +2,7 @@
 
 int main(void)
 {
-	printf("ReScheme v0.2\n");
+	printf("ReScheme v0.3\n");
 
 	rs_gc_init();
 

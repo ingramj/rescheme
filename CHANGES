@@ -1,3 +1,6 @@
+v0.3  (18 Aug 2011)
+    * Symbols and strings are supported.
+    * There is a basic garbage collector.
 v0.2  (8 Aug 2011)
     * Character literals, booleans, and null are supported.
 v0.1  (2 Aug 2011)
