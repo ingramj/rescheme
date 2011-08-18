@@ -39,14 +39,14 @@ enum state { ST_START, ST_DECIMAL, ST_HASH, ST_BINARY, ST_OCTAL, ST_HEX,
 		rs_fatal("could not write to buffer:");
 
 /* This fuction turns a buffer full of digits into a ReScheme fixnum. */
-static inline rs_object check_num(struct rs_buf *buf, int base);
+static inline rs_object rs_read_check_num(struct rs_buf *buf, int base);
 
 /* Sometimes it's helpful to take a shortcut, and read in several characters at
    once. This function reads characters into a buffer, starting with c, and
    reading the rest from in. It stops when either n characters have been read,
    or it reads in a delimiter (see below).
 */
-static void get_word(struct rs_buf *buf, FILE *in, int c, int n);
+static void rs_read_get_word(struct rs_buf *buf, FILE *in, int c, int n);
 
 /* Inside each state (most of them, anyway) is an inner switch that checks the
    input character to determine what actions to take. Since many character will
@@ -138,7 +138,7 @@ rs_object rs_read(FILE *in)
 					break;
 				case DELIM:
 					PUSH_BACK(c, in);
-					obj = rs_symbol_create(rs_buf_str(&buf));
+					obj = rs_symbol_create(rs_buf_cstr(&buf));
 					cur_state = ST_END;
 					break;
 				default:
@@ -176,7 +176,7 @@ rs_object rs_read(FILE *in)
 				break;
 			case DELIM:
 				PUSH_BACK(c, in);
-				obj = check_num(&buf, 10);
+				obj = rs_read_check_num(&buf, 10);
 				cur_state = ST_END;
 				break;
 			default:
@@ -244,7 +244,7 @@ rs_object rs_read(FILE *in)
 				break;
 			case DELIM:
 				PUSH_BACK(c, in);
-				obj = check_num(&buf, 2);
+				obj = rs_read_check_num(&buf, 2);
 				cur_state = ST_END;
 				break;
 			default:
@@ -259,7 +259,7 @@ rs_object rs_read(FILE *in)
 				break;
 			case DELIM:
 				PUSH_BACK(c, in);
-				obj = check_num(&buf, 8);
+				obj = rs_read_check_num(&buf, 8);
 				cur_state = ST_END;
 				break;
 			default:
@@ -274,7 +274,7 @@ rs_object rs_read(FILE *in)
 				break;
 			case DELIM:
 				PUSH_BACK(c, in);
-				obj = check_num(&buf, 16);
+				obj = rs_read_check_num(&buf, 16);
 				cur_state = ST_END;
 				break;
 			default:
@@ -323,14 +323,14 @@ rs_object rs_read(FILE *in)
 		case ST_CHAR_N:
 			assert(c == 'n' || c == 'N');
 			/* See if we have #\newline. */
-			get_word(&buf, in, c, 7);
-			if (strcmp("n", rs_buf_str(&buf)) == 0) {
+			rs_read_get_word(&buf, in, c, 7);
+			if (strcmp("n", rs_buf_cstr(&buf)) == 0) {
 				obj = rs_character_to_obj(c);
-			} else if (strcmp("newline", rs_buf_str(&buf)) == 0) {
+			} else if (strcmp("newline", rs_buf_cstr(&buf)) == 0) {
 				obj = rs_character_to_obj('\n');
 			} else {
 				rs_fatal("unknown character literal (#\\%s)",
-				         rs_buf_str(&buf));
+				         rs_buf_cstr(&buf));
 			}
 			cur_state = ST_END;
 			break;
@@ -338,14 +338,14 @@ rs_object rs_read(FILE *in)
 		case ST_CHAR_S:
 			assert(c == 's' || c == 'S');
 			/* See if we have #\space. */
-			get_word(&buf, in, c, 5);
-			if (strcmp("s", rs_buf_str(&buf)) == 0) {
+			rs_read_get_word(&buf, in, c, 5);
+			if (strcmp("s", rs_buf_cstr(&buf)) == 0) {
 				obj = rs_character_to_obj(c);
-			} else if (strcmp("space", rs_buf_str(&buf)) == 0) {
+			} else if (strcmp("space", rs_buf_cstr(&buf)) == 0) {
 				obj = rs_character_to_obj(' ');
 			} else {
 				rs_fatal("unknown character literal (#\\%s)",
-				         rs_buf_str(&buf));
+				         rs_buf_cstr(&buf));
 			}
 			cur_state = ST_END;
 			break;
@@ -353,14 +353,14 @@ rs_object rs_read(FILE *in)
 		case ST_CHAR_T:
 			assert(c == 't' || c == 'T');
 			/* See if we have #\tab (which is non-standard). */
-			get_word(&buf, in, c, 3);
-			if (strcmp("t", rs_buf_str(&buf)) == 0) {
+			rs_read_get_word(&buf, in, c, 3);
+			if (strcmp("t", rs_buf_cstr(&buf)) == 0) {
 				obj = rs_character_to_obj(c);
-			} else if (strcmp("tab", rs_buf_str(&buf)) == 0) {
+			} else if (strcmp("tab", rs_buf_cstr(&buf)) == 0) {
 				obj = rs_character_to_obj('\t');
 			} else {
 				rs_fatal("unknown character literal (#\\%s)",
-				         rs_buf_str(&buf));
+				         rs_buf_cstr(&buf));
 			}
 			cur_state = ST_END;
 			break;
@@ -372,7 +372,7 @@ rs_object rs_read(FILE *in)
 				break;
 			case DELIM:
 				PUSH_BACK(c, in);
-				obj = rs_symbol_create(rs_buf_str(&buf));
+				obj = rs_symbol_create(rs_buf_cstr(&buf));
 				cur_state = ST_END;
 				break;
 			default:
@@ -387,7 +387,7 @@ rs_object rs_read(FILE *in)
 		case ST_STRING:
 			switch (c) {
 			case '"':
-				obj = rs_string_create(rs_buf_str(&buf));
+				obj = rs_string_create(rs_buf_cstr(&buf));
 				cur_state = ST_END;
 				break;
 			case '\\':
@@ -441,12 +441,12 @@ rs_object rs_read(FILE *in)
 }
 
 
-static inline rs_object check_num(struct rs_buf *buf, int base)
+static inline rs_object rs_read_check_num(struct rs_buf *buf, int base)
 {
 	assert(buf != NULL);
 	assert(base == 10 || base == 2 || base == 8 || base == 16);
 
-	long value = strtol(rs_buf_str(buf), NULL, base);
+	long value = strtol(rs_buf_cstr(buf), NULL, base);
 	if (value < rs_fixnum_min || value > rs_fixnum_max) {
 		rs_fatal("number out of range");
 	}
@@ -454,7 +454,7 @@ static inline rs_object check_num(struct rs_buf *buf, int base)
 }
 
 
-static void get_word(struct rs_buf *buf, FILE *in, int c, int n)
+static void rs_read_get_word(struct rs_buf *buf, FILE *in, int c, int n)
 {
 	assert(buf != NULL);
 	assert(in != NULL);

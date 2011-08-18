@@ -173,11 +173,11 @@ void rs_buf_reset(struct rs_buf *buf);
 /* Push a character into a buffer, and then return it. */
 struct rs_buf *rs_buf_push(struct rs_buf *buf, char c);
 
-/* Returns the string held in buf. Guaranteed to be NUL-terminated.
+/* Returns the C string held in buf. Guaranteed to be NUL-terminated.
    NOTE: The string may be modified after it is returned. If you're going to
    keep it around for long, make a copy and use that instead.
  */
-const char *rs_buf_str(struct rs_buf *buf);
+const char *rs_buf_cstr(struct rs_buf *buf);
 
 
 

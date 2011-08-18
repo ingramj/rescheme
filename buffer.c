@@ -57,7 +57,7 @@ struct rs_buf *rs_buf_push(struct rs_buf *buf, char c)
 }
 
 
-const char *rs_buf_str(struct rs_buf *buf)
+const char *rs_buf_cstr(struct rs_buf *buf)
 {
 	assert(buf != NULL);
 	assert((buf->buf == NULL && buf->cap == 0 && buf->off == 0) ||
