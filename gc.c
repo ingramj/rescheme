@@ -43,7 +43,7 @@ void rs_gc_shutdown(void)
 }
 
 
-struct rs_hobject *rs_hobject_alloc(void)
+struct rs_hobject *rs_gc_alloc_hobject(void)
 {
 	assert(heap != NULL);
 

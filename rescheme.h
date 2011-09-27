@@ -3,7 +3,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
-/* The ReScheme "public" API. Typedefs, functions, an macros declared here may
+/* The ReScheme "public" API. Typedefs, functions, and macros declared here may
    be directly used in any compilation unit.
 */
 
@@ -16,8 +16,8 @@
 /**** object.c - object model. ****/
 
 /* An rs_object can be any ReScheme data type. Right now there are fixnums,
-   characters, booleans, null, and end-of-file, but soon there will be
-   others.
+   characters, booleans, symbols, strings, null, and end-of-file, but soon there
+   will be others.
 */
 typedef long rs_object;
 
@@ -26,7 +26,7 @@ static inline int rs_heap_p(rs_object obj);
 
 
 /* In general, each type will have 3 functions. For a type X, the functions are:
-   * rs_X_p(rs_object obj) -- checks if obj is of type X.
+   * rs_X_p(rs_object obj) -- returns true if obj is of type X.
    * rs_X_to_obj(rs_X val) -- make val into an rs_object.
    * rs_obj_to_X(rs_object obj) -- get a value of type X from obj.
 */
@@ -140,7 +140,7 @@ void rs_gc_init(void);
 void rs_gc_shutdown(void);
 
 /* Allocate an object on the heap. */
-struct rs_hobject *rs_hobject_alloc(void);
+struct rs_hobject *rs_gc_alloc_hobject(void);
 
 
 
@@ -156,7 +156,7 @@ void rs_symtab_remove(const char *sym);
 
 /**** buffer.c - character buffer data structure. ****/
 
-/* A growable, add-only character buffer. */
+/* A growable, append-only character buffer. */
 struct rs_buf;
 
 /* Initialize a buffer. Trying to do anything to a buffer before calling this
@@ -170,7 +170,7 @@ void rs_buf_init(struct rs_buf *buf);
 */
 void rs_buf_reset(struct rs_buf *buf);
 
-/* Push a character into a buffer, and then return it. */
+/* Push a character into a buffer, and then return the buffer. */
 struct rs_buf *rs_buf_push(struct rs_buf *buf, char c);
 
 /* Returns the C string held in buf. Guaranteed to be NUL-terminated.
@@ -183,8 +183,9 @@ const char *rs_buf_cstr(struct rs_buf *buf);
 
 /**** stack.c - generic stack data structure. ****/
 
-/* A stack frame. Stack functions take pointers to these, and a NULL pointer
-   means an empty stack. */
+/* A stack frame. The stack functions take pointers to these. An empty stack is
+   represented by a NULL pointer.
+ */
 struct rs_stack;
 
 /* Push data onto stack, and return the new top of the stack. */

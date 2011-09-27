@@ -38,7 +38,7 @@ void rs_hobject_release(struct rs_hobject *obj)
 rs_object rs_symbol_create(const char *name)
 {
 	assert(name != NULL);
-	rs_symbol *sym = rs_hobject_alloc();
+	rs_symbol *sym = rs_gc_alloc_hobject();
 	sym->type = RS_SYMBOL;
 	sym->val.sym = rs_symtab_insert(name);
 
@@ -58,7 +58,7 @@ static void rs_symbol_release(rs_symbol *sym)
 rs_object rs_string_create(const char *cstr)
 {
 	assert(cstr != NULL);
-	rs_string *str = rs_hobject_alloc();
+	rs_string *str = rs_gc_alloc_hobject();
 	str->type = RS_STRING;
 	str->val.str = strdup(cstr);
 	if (str->val.str == NULL) {
