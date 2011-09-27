@@ -3,8 +3,8 @@ CC = clang
 #CFLAGS = -std=c99 -pedantic -Wall -Wextra -Werror -DNDEBUG -Os
 CFLAGS = -std=c99 -pedantic -Wall -Wextra -Werror -g -DDEBUG -O0
 
-OBJECTS = object.o read.o eval.o write.o gc.o symtab.o buffer.o error.o \
-          rescheme.o
+OBJECTS = object.o read.o eval.o write.o gc.o symtab.o buffer.o stack.o \
+		  error.o rescheme.o
 
 .PHONY: clean cleaner
 

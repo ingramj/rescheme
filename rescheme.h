@@ -181,10 +181,24 @@ const char *rs_buf_cstr(struct rs_buf *buf);
 
 
 
+/**** stack.c - generic stack data structure. ****/
+
+/* A stack frame. Stack functions take pointers to these, and a NULL pointer
+   means an empty stack. */
+struct rs_stack;
+
+/* Push data onto stack, and return the new top of the stack. */
+struct rs_stack *rs_stack_push(struct rs_stack *stack, void *data);
+
+/* Pop the top value of stack, and set stack to point to the new top frame. */
+void *rs_stack_pop(struct rs_stack **stack);
+
+
+
 /**** error.c - error-reporting. ****/
 
 /* The error macros have a printf-like interface. If the format string ends with
-   a ':', then the result of strerror(3) is appened. The "_s" varieties take an
+   a ':', then the result of strerror(3) is appended. The "_s" varieties take an
    integer status code to pass to strerror(3), and the normal varieties use
    errno.
 */

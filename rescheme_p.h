@@ -134,6 +134,13 @@ struct rs_buf {
 };
 
 
+/**** stack.c ****/
+struct rs_stack {
+	struct rs_stack *next;
+	void *data;
+};
+
+
 /**** error.c ****/
 void eprintf(int status, char const * const func, char const * const fmt, ...);
 
