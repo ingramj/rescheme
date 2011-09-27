@@ -37,3 +37,20 @@ static struct rs_stack *rs_stack_alloc_frame(void *data)
 	frame->next = NULL;
 	return frame;
 }
+
+
+void rs_stack_test(void)
+{
+	struct rs_stack *stack = NULL;
+	stack = rs_stack_push(stack, (void *) 1);
+	stack = rs_stack_push(stack, (void *) 2);
+	stack = rs_stack_push(stack, (void *) 3);
+	for (int i = 3; i > 0; i--) {
+		int data = (int) rs_stack_pop(&stack);
+		if (data != i) {
+			rs_fatal("expected %d, got %d", i, data);
+		}
+	}
+	assert(stack == NULL);
+	TRACE("passed.");
+}
