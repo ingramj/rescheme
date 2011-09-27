@@ -1,6 +1,7 @@
 #include "rescheme.h"
 
 #include <assert.h>
+#include <string.h>
 
 #define _RS_BUF_GROWBY 128
 
@@ -68,4 +69,33 @@ const char *rs_buf_cstr(struct rs_buf *buf)
 	}
 	buf->buf[buf->off] = '\0';
 	return (const char *) buf->buf;
+}
+
+
+void rs_buf_test(void)
+{
+	struct rs_buf buf;
+	rs_buf_init(&buf);
+
+	// Make sure the buffer is empty.
+	assert(strcmp(rs_buf_cstr(&buf), "") == 0);
+
+	char str[] = "This is the test string.\n";
+
+	// Push the characters of str into buf, excluding the final '\0'.
+	for (int i = 0; i < (int) strlen(str); i++) {
+		if (rs_buf_push(&buf, str[i]) == NULL) {
+			rs_fatal("could not push to buffer:");
+		}
+	}
+	const char *bufstr = rs_buf_cstr(&buf);
+
+	// Make sure the returned string is nul-terminated.
+	assert(bufstr[strlen(str)+1] == '\0');
+
+	// Make sure the returned string matches the original string.
+	assert(strcmp(bufstr, str) == 0);
+
+	rs_buf_reset(&buf);
+	TRACE("passed");
 }

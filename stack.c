@@ -52,5 +52,5 @@ void rs_stack_test(void)
 		}
 	}
 	assert(stack == NULL);
-	TRACE("passed.");
+	TRACE("passed");
 }

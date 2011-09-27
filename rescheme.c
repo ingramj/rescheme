@@ -6,6 +6,7 @@ int main(void)
 	printf("ReScheme v0.3\n");
 
 #ifdef DEBUG
+	rs_buf_test();
 	rs_stack_test();
 #endif
 

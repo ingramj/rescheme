@@ -179,6 +179,8 @@ struct rs_buf *rs_buf_push(struct rs_buf *buf, char c);
  */
 const char *rs_buf_cstr(struct rs_buf *buf);
 
+/* Run a basic test of the buffer functions. */
+void rs_buf_test(void);
 
 
 /**** stack.c - generic stack data structure. ****/
