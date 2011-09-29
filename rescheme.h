@@ -106,6 +106,21 @@ rs_object rs_string_create(const char *cstr);
 static inline char *rs_string_cstr(rs_string *str);
 
 
+/** Pairs **/
+typedef struct rs_hobject rs_pair;
+
+static inline int rs_pair_p(rs_object obj);
+static inline rs_object rs_pair_to_obj(rs_pair *pair);
+static inline rs_pair *rs_obj_to_pair(rs_object obj);
+rs_object rs_pair_create(rs_object car, rs_object cdr);
+
+static inline rs_object rs_pair_car(rs_pair *pair);
+static inline rs_object rs_pair_cdr(rs_pair *pair);
+
+static inline void rs_pair_set_car(rs_pair *pair, rs_object car);
+static inline void rs_pair_set_cdr(rs_pair *pair, rs_object cdr);
+
+
 
 /**** read.c - s-expression parsing. ****/
 
@@ -183,6 +198,7 @@ const char *rs_buf_cstr(struct rs_buf *buf);
 void rs_buf_test(void);
 
 
+
 /**** stack.c - generic stack data structure. ****/
 
 /* A stack frame. The stack functions take pointers to these. An empty stack is
@@ -198,6 +214,7 @@ void *rs_stack_pop(struct rs_stack **stack);
 
 /* Run a basic test of the stack functions. */
 void rs_stack_test(void);
+
 
 
 /**** error.c - error-reporting. ****/

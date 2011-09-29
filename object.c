@@ -23,12 +23,15 @@ const rs_object rs_eof   = 15;  // 1111
 static void rs_symbol_release(rs_symbol *sym);
 static void rs_string_release(rs_string *str);
 
+
 void rs_hobject_release(struct rs_hobject *obj)
 {
 	if (rs_symbol_p((rs_object)obj)) {
 		rs_symbol_release(obj);
 	} else if (rs_string_p((rs_object)obj)) {
 		rs_string_release(obj);
+	} else if (rs_pair_p((rs_object)obj)) {
+		// do nothing
 	} else {
 		rs_fatal("unknown object type");
 	}
@@ -75,4 +78,15 @@ static void rs_string_release(rs_string *str)
 	assert(str->val.str != NULL);
 
 	free(str->val.str);
+}
+
+
+rs_object rs_pair_create(rs_object car, rs_object cdr)
+{
+	rs_pair *pair = rs_gc_alloc_hobject();
+	pair->type = RS_PAIR;
+	pair->val.pair.car = car;
+	pair->val.pair.cdr = cdr;
+
+	return rs_pair_to_obj(pair);
 }

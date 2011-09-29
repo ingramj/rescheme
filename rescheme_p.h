@@ -69,7 +69,7 @@ static inline int rs_eof_p(rs_object obj) {
 
 
 enum rs_hobject_type {
-	RS_SYMBOL, RS_STRING
+	RS_SYMBOL, RS_STRING, RS_PAIR
 };
 
 struct rs_hobject {
@@ -77,6 +77,10 @@ struct rs_hobject {
 	union {
 		const char *sym;
 		char *str;
+		struct {
+			rs_object car;
+			rs_object cdr;
+		} pair;
 	} val;
 	char flags;
 };
@@ -123,6 +127,52 @@ static inline char *rs_string_cstr(rs_string *str) {
 	assert(str->type == RS_STRING);
 	assert(str->val.str != NULL);
 	return str->val.str;
+}
+
+static inline int rs_pair_p(rs_object obj) {
+	return rs_heap_p(obj) && ((struct rs_hobject*)obj)->type == RS_PAIR;
+}
+
+static inline rs_object rs_pair_to_obj(rs_pair *pair)
+{
+	assert(pair != NULL);
+	assert(pair->type == RS_PAIR);
+	return (rs_object)pair;
+}
+
+static inline rs_pair *rs_obj_to_pair(rs_object obj)
+{
+	assert(rs_pair_p(obj));
+	return (rs_pair*)obj;
+}
+
+
+static inline rs_object rs_pair_car(rs_pair *pair)
+{
+	assert(pair != NULL);
+	assert(pair->type == RS_PAIR);
+	return pair->val.pair.car;
+}
+
+static inline rs_object rs_pair_cdr(rs_pair *pair)
+{
+	assert(pair != NULL);
+	assert(pair->type == RS_PAIR);
+	return pair->val.pair.cdr;
+}
+
+static inline void rs_pair_set_car(rs_pair *pair, rs_object obj)
+{
+	assert(pair != NULL);
+	assert(pair->type == RS_PAIR);
+	pair->val.pair.car = obj;
+}
+
+static inline void rs_pair_set_cdr(rs_pair *pair, rs_object obj)
+{
+	assert(pair != NULL);
+	assert(pair->type == RS_PAIR);
+	pair->val.pair.cdr = obj;
 }
 
 

@@ -5,6 +5,7 @@
 
 
 static int rs_write_string(FILE *out, rs_string *str);
+static int rs_write_pair(FILE *out, rs_pair *pair);
 
 
 int rs_write(FILE *out, rs_object obj)
@@ -33,8 +34,30 @@ int rs_write(FILE *out, rs_object obj)
 		result = fprintf(out, "%s", rs_symbol_cstr(rs_obj_to_symbol(obj)));
 	} else if (rs_string_p(obj)) {
 		result = rs_write_string(out, rs_obj_to_string(obj));
+	} else if (rs_pair_p(obj)) {
+		result = fprintf(out, "(");
+		result += rs_write_pair(out, rs_obj_to_pair(obj));
+		result += fprintf(out, ")");
 	} else {
 		rs_fatal("illegal object type");
+	}
+	return result;
+}
+
+
+static int rs_write_pair(FILE *out, rs_pair *pair)
+{
+	int result = rs_write(out, rs_pair_car(pair));
+
+	rs_object cdr = rs_pair_cdr(pair);
+	if (rs_pair_p(cdr)) {
+		result += fprintf(out, " ");
+		result += rs_write_pair(out, rs_obj_to_pair(cdr));
+	} else if (rs_null_p(cdr)) {
+		return result;
+	} else {
+		result += fprintf(out, " . ");
+		result += rs_write(out, cdr);
 	}
 	return result;
 }
