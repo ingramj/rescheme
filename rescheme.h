@@ -157,6 +157,12 @@ void rs_gc_shutdown(void);
 /* Allocate an object on the heap. */
 struct rs_hobject *rs_gc_alloc_hobject(void);
 
+/* Push an object onto the GC stack. */
+void rs_gc_push(struct rs_hobject *obj);
+
+/* Pop an object from the GC stack. */
+struct rs_hobject *rs_gc_pop(void);
+
 
 
 /**** symtab.c - symbol table. ****/

@@ -7,8 +7,13 @@
 static struct rs_hobject *heap = NULL;
 static int next_obj = 0;
 
+
+static struct rs_stack *root = NULL;
+
+
 static int rs_gc_next_obj(void);
 static void rs_gc_mark(void);
+static void rs_gc_mark_obj(struct rs_hobject *obj);
 static void rs_gc_sweep(void);
 
 
@@ -63,6 +68,22 @@ struct rs_hobject *rs_gc_alloc_hobject(void)
 }
 
 
+void rs_gc_push(struct rs_hobject *obj)
+{
+	assert(obj != NULL);
+	root = rs_stack_push(root, obj);
+}
+
+
+struct rs_hobject *rs_gc_pop(void)
+{
+	assert(root != NULL);
+	assert(rs_stack_top(root) != NULL);
+
+	return (struct rs_hobject*)rs_stack_pop(&root);
+}
+
+
 static int rs_gc_next_obj(void)
 {
 	assert(next_obj >= 0 && next_obj < HEAP_SIZE);
@@ -83,8 +104,28 @@ static int rs_gc_next_obj(void)
 
 static void rs_gc_mark(void)
 {
-	// We have no roots yet, so do nothing.
+	struct rs_stack *s = root;
+	while (s != NULL) {
+		rs_gc_mark_obj(rs_stack_top(s));
+		s = s->next;
+	}
 	return;
+}
+
+
+static void rs_gc_mark_obj(struct rs_hobject *obj)
+{
+	assert(obj != NULL);
+
+	GC_FLAG_MARK_SET(obj->flags);
+	if (rs_pair_p((rs_object)obj)) {
+		if (rs_heap_p(rs_pair_car(obj))) {
+			rs_gc_mark_obj((struct rs_hobject*) rs_pair_car(obj));
+		}
+		if (rs_heap_p(rs_pair_cdr(obj))) {
+			rs_gc_mark_obj((struct rs_hobject*) rs_pair_cdr(obj));
+		}
+	}
 }
 
 
