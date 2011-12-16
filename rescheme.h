@@ -158,10 +158,10 @@ void rs_gc_shutdown(void);
 struct rs_hobject *rs_gc_alloc_hobject(void);
 
 /* Push an object onto the GC stack. */
-void rs_gc_push(struct rs_hobject *obj);
+void rs_gc_push(rs_object obj);
 
 /* Pop an object from the GC stack. */
-struct rs_hobject *rs_gc_pop(void);
+void rs_gc_pop(void);
 
 
 

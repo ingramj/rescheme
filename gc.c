@@ -13,7 +13,7 @@ static struct rs_stack *root = NULL;
 
 static int rs_gc_next_obj(void);
 static void rs_gc_mark(void);
-static void rs_gc_mark_obj(struct rs_hobject *obj);
+static void rs_gc_mark_obj(rs_object obj);
 static void rs_gc_sweep(void);
 
 
@@ -68,19 +68,16 @@ struct rs_hobject *rs_gc_alloc_hobject(void)
 }
 
 
-void rs_gc_push(struct rs_hobject *obj)
+void rs_gc_push(rs_object obj)
 {
-	assert(obj != NULL);
-	root = rs_stack_push(root, obj);
+	root = rs_stack_push(root, (void*) obj);
 }
 
 
-struct rs_hobject *rs_gc_pop(void)
+void rs_gc_pop(void)
 {
 	assert(root != NULL);
-	assert(rs_stack_top(root) != NULL);
-
-	return (struct rs_hobject*)rs_stack_pop(&root);
+	(void) rs_stack_pop(&root);
 }
 
 
@@ -106,24 +103,21 @@ static void rs_gc_mark(void)
 {
 	struct rs_stack *s = root;
 	while (s != NULL) {
-		rs_gc_mark_obj(rs_stack_top(s));
+		rs_gc_mark_obj((rs_object)rs_stack_top(s));
 		s = s->next;
 	}
 	return;
 }
 
 
-static void rs_gc_mark_obj(struct rs_hobject *obj)
+static void rs_gc_mark_obj(rs_object obj)
 {
-	assert(obj != NULL);
-
-	GC_FLAG_MARK_SET(obj->flags);
-	if (rs_pair_p((rs_object)obj)) {
-		if (rs_heap_p(rs_pair_car(obj))) {
-			rs_gc_mark_obj((struct rs_hobject*) rs_pair_car(obj));
-		}
-		if (rs_heap_p(rs_pair_cdr(obj))) {
-			rs_gc_mark_obj((struct rs_hobject*) rs_pair_cdr(obj));
+	if (rs_heap_p(obj)) {
+		GC_FLAG_MARK_SET(((struct rs_hobject *)obj)->flags);
+		if (rs_pair_p(obj)) {
+			rs_pair *p = rs_obj_to_pair(obj);
+			rs_gc_mark_obj(rs_pair_car(p));
+			rs_gc_mark_obj(rs_pair_cdr(p));
 		}
 	}
 }

@@ -83,10 +83,16 @@ static void rs_string_release(rs_string *str)
 
 rs_object rs_pair_create(rs_object car, rs_object cdr)
 {
+	rs_gc_push(car);
+	rs_gc_push(cdr);
+
 	rs_pair *pair = rs_gc_alloc_hobject();
 	pair->type = RS_PAIR;
 	pair->val.pair.car = car;
 	pair->val.pair.cdr = cdr;
+
+	rs_gc_pop();
+	rs_gc_pop();
 
 	return rs_pair_to_obj(pair);
 }
