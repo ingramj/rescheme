@@ -212,6 +212,9 @@ struct rs_stack *rs_stack_push(struct rs_stack *stack, void *data);
 /* Pop the top value of stack, and set stack to point to the new top frame. */
 void *rs_stack_pop(struct rs_stack **stack);
 
+/* Return the top value of the stack without popping. */
+void *rs_stack_top(struct rs_stack *stack);
+
 /* Run a basic test of the stack functions. */
 void rs_stack_test(void);
 

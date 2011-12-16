@@ -27,6 +27,13 @@ void *rs_stack_pop(struct rs_stack **stack)
 }
 
 
+void *rs_stack_top(struct rs_stack *stack)
+{
+	assert(stack !=NULL);
+	return stack->data;
+}
+
+
 static struct rs_stack *rs_stack_alloc_frame(void *data)
 {
 	struct rs_stack *frame = malloc(sizeof(struct rs_stack));
